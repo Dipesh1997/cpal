@@ -44,8 +44,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
             child: Center(
               child: Text(
                 'Page ${widget.color['page'] ?? 'N/A'}',
-                style: TextStyle(
-                  color: isFavorite ? Colors.yellow : Colors.white,
+                style: const TextStyle(
+                  color: Colors.yellow,
                   fontWeight: FontWeight.bold,
                 ),
               ),
