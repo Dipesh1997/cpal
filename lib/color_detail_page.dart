@@ -39,16 +39,43 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
       appBar: AppBar(
         title: Text(widget.color['name']),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Page ${widget.color['page'] ?? 'N/A'}',
+                style: TextStyle(
+                  color: isFavorite ? Colors.yellow : Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: Icon(
               isFavorite ? Icons.star : Icons.star_border,
               color: isFavorite ? Colors.yellow : null,
             ),
-            onPressed: () {
+            onPressed: () async {
               setState(() {
                 isFavorite = !isFavorite;
                 widget.onFavoriteToggle(widget.color['number']);
               });
+
+              final prefs = await SharedPreferences.getInstance();
+              if (isFavorite) {
+                List<String> favoritePages =
+                    prefs.getStringList('favorite_pages') ?? [];
+                if (!favoritePages.contains(widget.color['page'].toString())) {
+                  favoritePages.add(widget.color['page'].toString());
+                  await prefs.setStringList('favorite_pages', favoritePages);
+                }
+              } else {
+                List<String> favoritePages =
+                    prefs.getStringList('favorite_pages') ?? [];
+                favoritePages.remove(widget.color['page'].toString());
+                await prefs.setStringList('favorite_pages', favoritePages);
+              }
             },
           ),
         ],
@@ -58,7 +85,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
           padding: const EdgeInsets.all(16.0),
           child: Card(
             elevation: 4,
-            color: hexToColor(widget.color['value']), // Add this
+            color: hexToColor(widget.color['value']),
             child: Container(
               width: double.infinity,
               height: 300,

@@ -89,9 +89,12 @@ class _ColorPalettePageState extends State<ColorPalettePage> {
               )),
         );
       } else {
+        // Group colors by page number for each category
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) {
-            final filtered = (entry.value as List).where((color) {
+            // Filter colors that match the query
+            final allCategoryColors = (entry.value as List);
+            final filteredCategoryColors = allCategoryColors.where((color) {
               return color['name']
                       .toString()
                       .toLowerCase()
@@ -101,7 +104,24 @@ class _ColorPalettePageState extends State<ColorPalettePage> {
                       .toLowerCase()
                       .contains(query.toLowerCase());
             }).toList();
-            return MapEntry(entry.key, filtered);
+
+            // Group filtered colors by page number
+            Map<int, List<dynamic>> colorsByPage = {};
+            for (var color in filteredCategoryColors) {
+              int page = color['page'] ?? 1;
+              if (!colorsByPage.containsKey(page)) {
+                colorsByPage[page] = [];
+              }
+              colorsByPage[page]!.add(color);
+            }
+
+            // Convert page-grouped colors to a flat list
+            List<dynamic> pageGroupedColors = [];
+            colorsByPage.forEach((page, colors) {
+              pageGroupedColors.addAll(colors);
+            });
+
+            return MapEntry(entry.key, pageGroupedColors);
           }),
         );
       }
@@ -115,16 +135,92 @@ class _ColorPalettePageState extends State<ColorPalettePage> {
     return Color(int.parse(buffer.toString(), radix: 16));
   }
 
-  int getStartingPageNumber(String currentCategory, List<String> categories) {
-    int startPage = 1;
-    int categoryIndex = categories.indexOf(currentCategory);
+  Widget buildColorList(String category) {
+    final categoryColors = filteredColors[category] ?? [];
 
-    for (int i = 0; i < categoryIndex; i++) {
-      final previousColors = filteredColors[categories[i]] ?? [];
-      startPage += (previousColors.length / 8).ceil();
+    // If no colors, return empty container
+    if (categoryColors.isEmpty) {
+      return const Center(child: Text('No colors found'));
     }
 
-    return startPage;
+    // Group colors by page
+    Map<int, List<dynamic>> colorsByPage = {};
+    for (var color in categoryColors) {
+      int page = color['page'] ?? 1;
+      if (!colorsByPage.containsKey(page)) {
+        colorsByPage[page] = [];
+      }
+      colorsByPage[page]!.add(color);
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount:
+          colorsByPage.length * 2, // Alternate between page header and colors
+      itemBuilder: (context, index) {
+        if (index.isOdd) {
+          // Page number display
+          final pageNumber = colorsByPage.keys.toList()[index ~/ 2];
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: Text(
+                'Page $pageNumber',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        } else {
+          // Colors for the page
+          final pageNumber = colorsByPage.keys.toList()[index ~/ 2];
+          final pageColors = colorsByPage[pageNumber]!;
+
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              childAspectRatio: 0.7,
+            ),
+            itemCount: pageColors.length,
+            itemBuilder: (context, colorIndex) {
+              final color = pageColors[colorIndex];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ColorDetailPage(
+                        color: color,
+                        onFavoriteToggle: toggleFavorite,
+                        isFavorite:
+                            favoriteColorNumbers.contains(color['number']),
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  color: hexToColor(color['value']),
+                  child: Center(
+                    child: Text(
+                      color['name'],
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -187,116 +283,7 @@ class _ColorPalettePageState extends State<ColorPalettePage> {
             ? const Center(child: Text('No results found'))
             : TabBarView(
                 children: categories.map((category) {
-                  final categoryColors = filteredColors[category] ?? [];
-                  final pages = (categoryColors.length / 8).ceil();
-                  final startPage = getStartingPageNumber(category, categories);
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount:
-                        pages * 2, // Modified to include last page number
-                    itemBuilder: (context, index) {
-                      if (index.isOdd) {
-                        // Page number display
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Center(
-                            child: Text(
-                              'Page ${startPage + (index ~/ 2)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-
-                      final pageIndex = index ~/ 2;
-                      final startIndex = pageIndex * 8;
-                      final endIndex =
-                          (startIndex + 8).clamp(0, categoryColors.length);
-                      final pageColors =
-                          categoryColors.sublist(startIndex, endIndex);
-
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 1.5,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemCount: pageColors.length,
-                        itemBuilder: (context, colorIndex) {
-                          final color = pageColors[colorIndex];
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ColorDetailPage(
-                                    color: color,
-                                    isFavorite: favoriteColorNumbers
-                                        .contains(color['number']),
-                                    onFavoriteToggle: toggleFavorite,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Card(
-                              elevation: 4,
-                              color: hexToColor(color['value']), // Add this
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: Stack(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            color['name'],
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${color['number']} - ${color['value']}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (favoriteColorNumbers
-                                        .contains(color['number']))
-                                      const Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: Icon(
-                                          Icons.star,
-                                          color: Colors.yellow,
-                                          size: 20,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
+                  return buildColorList(category);
                 }).toList(),
               ),
       ),
