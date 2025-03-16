@@ -32,8 +32,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Temporarily disable for development
             signingConfig = signingConfigs.debug
             minifyEnabled false
             shrinkResources false
@@ -56,4 +55,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Remove all custom dependencies - let Flutter manage them
+    // implementation "androidx.annotation:annotation:1.5.0"
+    // implementation "io.flutter:flutter_embedding_debug:1.0.0-3316dd8728"
+    // implementation "io.flutter.plugins.sharedpreferences:shared_preferences_android:1.0.0"
 }

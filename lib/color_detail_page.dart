@@ -20,6 +20,9 @@ class ColorDetailPage extends StatefulWidget {
 class _ColorDetailPageState extends State<ColorDetailPage> {
   late bool isFavorite;
 
+  // Use a static cache for color conversion
+  static final Map<String, Color> _colorCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -27,10 +30,18 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   }
 
   Color hexToColor(String hexString) {
+    if (_colorCache.containsKey(hexString)) {
+      return _colorCache[hexString]!;
+    }
+
     final buffer = StringBuffer();
     if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
     buffer.write(hexString.replaceFirst('#', ''));
-    return Color(int.parse(buffer.toString(), radix: 16));
+    final color = Color(int.parse(buffer.toString(), radix: 16));
+
+    // Store in cache
+    _colorCache[hexString] = color;
+    return color;
   }
 
   @override
