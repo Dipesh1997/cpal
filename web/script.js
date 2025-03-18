@@ -38,6 +38,21 @@ const noFavorites = document.getElementById('no-favorites');
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
+    // Show splash screen
+    const splashScreen = document.createElement('div');
+    splashScreen.className = 'splash-screen';
+    
+    const iconImg = document.createElement('img');
+    iconImg.src = 'assets/icon.png';
+    iconImg.alt = 'Color Palette';
+    
+    const spinner = document.createElement('div');
+    spinner.className = 'splash-spinner';
+    
+    splashScreen.appendChild(iconImg);
+    splashScreen.appendChild(spinner);
+    document.body.appendChild(splashScreen);
+    
     showLoading();
     await Promise.all([
         loadColors(),
@@ -46,6 +61,14 @@ async function init() {
     setupEventListeners();
     hideLoading();
     renderColors();
+    
+    // Hide splash screen
+    setTimeout(() => {
+        splashScreen.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(splashScreen);
+        }, 500);
+    }, 1000);
 }
 
 // Load colors from the external colors-data.js file
