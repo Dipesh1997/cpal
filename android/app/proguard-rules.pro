@@ -12,7 +12,7 @@
 
 # SharedPreferences rules
 -keep class androidx.preference.** { *; }
--keep class com.example.cpal.** { *; }
+-keep class com.color.paletteasian.** { *; }
 
 # Keep all model classes and serializers
 -keepclassmembers class * {
