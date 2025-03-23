@@ -1,4 +1,4 @@
-package com.color.cpal
+package com.color.paletteasian
 
 import io.flutter.embedding.android.FlutterActivity
 
