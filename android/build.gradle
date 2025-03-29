@@ -1,3 +1,4 @@
+//file:noinspection GrDeprecatedAPIUsage
 allprojects {
     repositories {
         google()
