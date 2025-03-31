@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
 
 class ColorDetailPage extends StatefulWidget {
   final Map<String, dynamic> color;
   final Function(String) onFavoriteToggle;
   final bool isFavorite;
+  final Map<String, List<dynamic>> allColors;
 
   const ColorDetailPage({
     super.key,
     required this.color,
     required this.onFavoriteToggle,
     required this.isFavorite,
+    required this.allColors,
   });
 
   @override
@@ -19,6 +22,8 @@ class ColorDetailPage extends StatefulWidget {
 
 class _ColorDetailPageState extends State<ColorDetailPage> {
   late bool isFavorite;
+  bool _isExpanded = false;
+  List<Map<String, dynamic>> _similarColors = [];
 
   // Use a static cache for color conversion
   static final Map<String, Color> _colorCache = {};
@@ -27,6 +32,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   void initState() {
     super.initState();
     isFavorite = widget.isFavorite;
+    _findSimilarColors();
   }
 
   Color hexToColor(String hexString) {
@@ -44,11 +50,241 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     return color;
   }
 
+  // Calculate color similarity using RGB values
+  double _calculateColorSimilarity(String color1Hex, String color2Hex) {
+    Color color1 = hexToColor(color1Hex);
+    Color color2 = hexToColor(color2Hex);
+
+    double rDiff = (color1.red - color2.red).abs().toDouble();
+    double gDiff = (color1.green - color2.green).abs().toDouble();
+    double bDiff = (color1.blue - color2.blue).abs().toDouble();
+
+    // Calculate Euclidean distance in RGB space
+    return sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
+  }
+
+  // Calculate similarity percentage (higher number means more similar)
+  double _calculateSimilarityPercentage(double distance) {
+    // Max possible RGB distance is sqrt(255^2 * 3) ≈ 441.67
+    const maxDistance = 441.67;
+    // Convert distance to percentage (inverse relationship)
+    return ((maxDistance - distance) / maxDistance * 100).clamp(0, 100);
+  }
+
+  void _findSimilarColors() {
+    String currentTab = widget.color['tab'] ?? 'opus'; // Get current tab
+    List<Map<String, dynamic>> allSimilarColors = [];
+
+    // If current tab is opus, show colors from light/medium/dark
+    // If current tab is light/medium/dark, show colors from opus
+    if (currentTab == 'opus') {
+      // For opus colors, show similar colors from light, medium, and dark tabs
+      ['light', 'medium', 'dark'].forEach((tab) {
+        if (widget.allColors.containsKey(tab)) {
+          for (var color in widget.allColors[tab]!) {
+            if (color is Map<String, dynamic>) {
+              double distance = _calculateColorSimilarity(
+                widget.color['value'],
+                color['value'],
+              );
+              double similarityPercentage = _calculateSimilarityPercentage(distance);
+              allSimilarColors.add({
+                ...color,
+                'similarity': distance,
+                'similarityPercentage': similarityPercentage,
+                'tab': tab,
+              });
+            }
+          }
+        }
+      });
+    } else {
+      // For light/medium/dark colors, show similar colors from opus tab only
+      if (widget.allColors.containsKey('opus')) {
+        for (var color in widget.allColors['opus']!) {
+          if (color is Map<String, dynamic>) {
+            double distance = _calculateColorSimilarity(
+              widget.color['value'],
+              color['value'],
+            );
+            double similarityPercentage = _calculateSimilarityPercentage(distance);
+            allSimilarColors.add({
+              ...color,
+              'similarity': distance,
+              'similarityPercentage': similarityPercentage,
+              'tab': 'opus',
+            });
+          }
+        }
+      }
+    }
+
+    // Sort by similarity and take top 5
+    allSimilarColors.sort((a, b) => (a['similarity'] as double).compareTo(b['similarity'] as double));
+    setState(() {
+      _similarColors = allSimilarColors.take(5).toList();
+    });
+  }
+
+  String _getDisplayTitle() {
+    if (widget.color['tab'] == 'ncs') {
+      return 'Color ${widget.color['number']}';
+    }
+    return widget.color['name'] ?? 'N/A';
+  }
+
+  Widget _buildColorInfo() {
+    List<Widget> details = [];
+    
+    if (widget.color['tab'] == 'ncs') {
+      details = [
+        Text(
+          'Number: ${widget.color['number']}',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Position: ${widget.color['position']}',
+          style: const TextStyle(
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Hex Code: ${widget.color['value']}',
+          style: const TextStyle(
+            fontSize: 18,
+          ),
+        ),
+      ];
+    } else {
+      details = [
+        Text(
+          'Number: ${widget.color['number']}',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Name: ${widget.color['name']}',
+          style: const TextStyle(
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Hex Code: ${widget.color['value']}',
+          style: const TextStyle(
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tab: ${widget.color['tab'].toString().toUpperCase()}',
+          style: const TextStyle(
+            fontSize: 18,
+          ),
+        ),
+      ];
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: details,
+    );
+  }
+
+  Widget _buildSimilarColorCard(Map<String, dynamic> color) {
+    String displayText = color['tab'] == 'ncs' 
+        ? 'Position: ${color['position']}' 
+        : color['name'];
+
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ColorDetailPage(
+                color: {
+                  ...color,
+                  'tab': color['tab'],
+                },
+                onFavoriteToggle: widget.onFavoriteToggle,
+                isFavorite: widget.isFavorite,
+                allColors: widget.allColors,
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: hexToColor(color['value']),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayText,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${color['number']} (${color['tab'].toString().toUpperCase()})',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${color['similarityPercentage'].toStringAsFixed(1)}% Match',
+                    style: TextStyle(
+                      color: color['similarityPercentage'] >= 90 
+                          ? Colors.green 
+                          : color['similarityPercentage'] >= 75 
+                              ? Colors.orange 
+                              : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    color['value'],
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.color['name']),
+        title: Text(_getDisplayTitle()),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -64,65 +300,52 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
           ),
           IconButton(
             icon: Icon(
-              isFavorite ? Icons.star : Icons.star_border,
-              color: isFavorite ? Colors.yellow : null,
+              widget.isFavorite ? Icons.star : Icons.star_border,
+              color: Colors.yellow,
             ),
-            onPressed: () async {
-              setState(() {
-                isFavorite = !isFavorite;
-                widget.onFavoriteToggle(widget.color['number']);
-              });
-
-              final prefs = await SharedPreferences.getInstance();
-              if (isFavorite) {
-                List<String> favoritePages =
-                    prefs.getStringList('favorite_pages') ?? [];
-                if (!favoritePages.contains(widget.color['page'].toString())) {
-                  favoritePages.add(widget.color['page'].toString());
-                  await prefs.setStringList('favorite_pages', favoritePages);
-                }
-              } else {
-                List<String> favoritePages =
-                    prefs.getStringList('favorite_pages') ?? [];
-                favoritePages.remove(widget.color['page'].toString());
-                await prefs.setStringList('favorite_pages', favoritePages);
-              }
+            onPressed: () {
+              widget.onFavoriteToggle(widget.color['number']);
             },
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            elevation: 4,
-            color: hexToColor(widget.color['value']),
-            child: Container(
-              width: double.infinity,
-              height: 300,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    widget.color['name'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${widget.color['number']} - ${widget.color['value']}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: hexToColor(widget.color['value']),
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildColorInfo(),
+                ),
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+            ExpansionTile(
+              title: const Text('Similar Colors'),
+              initiallyExpanded: _isExpanded,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _isExpanded = expanded;
+                });
+              },
+              children: [
+                ..._similarColors.map((color) => _buildSimilarColorCard(color)),
+              ],
+            ),
+          ],
         ),
       ),
     );

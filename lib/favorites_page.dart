@@ -59,9 +59,14 @@ class FavoritesPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ColorDetailPage(
-                          color: color,
-                          isFavorite: true,
+                          color: {
+                            ...color,
+                            'tab': 'favorites',
+                          },
                           onFavoriteToggle: onFavoriteToggle,
+                          isFavorite: true,
+                          allColors: allColors.map((key, value) => 
+                            MapEntry(key, value as List<dynamic>)),
                         ),
                       ),
                     );

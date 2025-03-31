@@ -4,24 +4,25 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
-
         {
-            "name": "cpal",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "cpal (profile mode)",
+            "name": "cpal (Moto G62 5G)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "deviceId": "moto g62 5g"
         },
         {
-            "name": "cpal (release mode)",
+            "name": "cpal (Moto G62 5G - profile)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "profile",
+            "deviceId": "moto g62 5g"
+        },
+        {
+            "name": "cpal (Moto G62 5G - release)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "deviceId": "moto g62 5g"
         }
     ]
 }
