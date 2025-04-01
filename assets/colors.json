@@ -13207,18 +13207,486 @@
 ],
 "SA":[
  {
-  "number": "9436 ",
-  "name": "AIR BREEZE",
-  "value": "#F3EDE8",
+  "number": "SA01",
+  "name": "Conch Shell",
+  "value": "#fffde5",
   "page": 1
+ },
+ {
+  "number": "SA02",
+  "name": "Mysore Ivory",
+  "value": "#e1e8d1",
+  "page": 1
+ },
+ {
+  "number": "SA03",
+  "name": "Calcutta Rain",
+  "value": "#e3d3c8",
+  "page": 1
+ },
+ {
+  "number": "SA04",
+  "name": "Limestone",
+  "value": "#f0dfca",
+  "page": 1
+ },
+ {
+  "number": "SA05",
+  "name": "Sonchampa",
+  "value": "#fee7bb",
+  "page": 1
+ },
+ {
+  "number": "SA06",
+  "name": "Ground Cumin",
+  "value": "#f5c89d",
+  "page": 1
+ },
+ {
+  "number": "SA07",
+  "name": "Faded Ochre",
+  "value": "#dcb88e",
+  "page": 1
+ },
+ {
+  "number": "SA08",
+  "name": "Parchment",
+  "value": "#dbceb7",
+  "page": 2
+ },
+ {
+  "number": "SA09",
+  "name": "Ivory Stain",
+  "value": "#c1b29e",
+  "page": 2
+ },
+ {
+  "number": "SA10",
+  "name": "Velour Grey",
+  "value": "#9b8f83",
+  "page": 2
+ },
+ {
+  "number": "SA11",
+  "name": "Potters Wheel",
+  "value": "#87776f",
+  "page": 2
+ },
+ {
+  "number": "SA12",
+  "name": "Bitter Chocolate",
+  "value": "#58514e",
+  "page": 2
+ },
+ {
+  "number": "SA13",
+  "name": "Warm Tobacco",
+  "value": "#5d4451",
+  "page": 2
+ },
+ {
+  "number": "SA14",
+  "name": "Crushed Nutmeg",
+  "value": "#64423b",
+  "page": 2
+ },
+ {
+  "number": "SA15",
+  "name": "Alabaster Blush",
+  "value": "#f3ccb9",
+  "page": 3
+ },
+ {
+  "number": "SA16",
+  "name": "Apricot Cream",
+  "value": "#b77a74",
+  "page": 3
+ },
+ {
+  "number": "SA17",
+  "name": "Tea Rose",
+  "value": "#9f6a61",
+  "page": 3
+ },
+ {
+  "number": "SA18",
+  "name": "Baked Terracota",
+  "value": "#974b3f",
+  "page": 3
+ },
+ {
+  "number": "SA19",
+  "name": "Ruby Rouge",
+  "value": "#801c1a",
+  "page": 3
+ },
+ {
+  "number": "SA20",
+  "name": "Dalhousie Red",
+  "value": "#9b1b2d",
+  "page": 3
+ },
+ {
+  "number": "SA21",
+  "name": "Madder Rose",
+  "value": "#82112e",
+  "page": 3
+ },
+ {
+  "number": "SA22",
+  "name": "Winter Smoke",
+  "value": "#b8b79e",
+  "page": 4
+ },
+ {
+  "number": "SA23",
+  "name": "Ganges Clay",
+  "value": "#b8ae92",
+  "page": 4
+ },
+ {
+  "number": "SA24",
+  "name": "Mangrove Green",
+  "value": "#4f6346",
+  "page": 4
+ },
+ {
+  "number": "SA25",
+  "name": "Zambian Emerald",
+  "value": "#014a36",
+  "page": 4
+ },
+ {
+  "number": "SA26",
+  "name": "Sepoy Green",
+  "value": "#614d30",
+  "page": 4
+ },
+ {
+  "number": "SA27",
+  "name": "River Stone",
+  "value": "#8f633d",
+  "page": 4
+ },
+ {
+  "number": "SA28",
+  "name": "Wet Turmeric",
+  "value": "#c27c22",
+  "page": 4
+ },
+ {
+  "number": "SA29",
+  "name": "Vintage Pistachio",
+  "value": "#99c6b6",
+  "page": 5
+ },
+ {
+  "number": "SA30",
+  "name": "Chutney Green",
+  "value": "#699082",
+  "page": 5
+ },
+ {
+  "number": "SA31",
+  "name": "Betel Leaf",
+  "value": "#3f6b5a",
+  "page": 5
+ },
+ {
+  "number": "SA32",
+  "name": "Romani Green",
+  "value": "#00463e",
+  "page": 5
+ },
+ {
+  "number": "SA33",
+  "name": "Mint Crush",
+  "value": "#8dd1c6",
+  "page": 5
+ },
+ {
+  "number": "SA34",
+  "name": "Iranian Turquoise",
+  "value": "#54abae",
+  "page": 5
+ },
+ {
+  "number": "SA35",
+  "name": "Coromandel Indigo",
+  "value": "#061b45",
+  "page": 5
  }
 ],
 "SV":[
  {
-  "number": "9436 ",
-  "name": "AIR BREEZE",
-  "value": "#F3EDE8",
+  "number": "SV01",
+  "name": "Namak",
+  "value": "#ebe9dd",
   "page": 1
+ },
+ {
+  "number": "SV02",
+  "name": "Muziris",
+  "value": "#f2ebe1",
+  "page": 1
+ },
+ {
+  "number": "SV03",
+  "name": "Mogra",
+  "value": "#f5ece3",
+  "page": 1
+ },
+ {
+  "number": "SV04",
+  "name": "Malabar White",
+  "value": "#e7ece5",
+  "page": 1
+ },
+ {
+  "number": "SV05",
+  "name": "White Peacock",
+  "value": "#efe5d8",
+  "page": 1
+ },
+ {
+  "number": "SV06",
+  "name": "Himalaya",
+  "value": "#e6e0d7",
+  "page": 1
+ },
+ {
+  "number": "SV07",
+  "name": "Sondesh",
+  "value": "#e7e1e0",
+  "page": 1
+ },
+ {
+  "number": "SV08",
+  "name": "Airavat",
+  "value": "#f3eadb",
+  "page": 2
+ },
+ {
+  "number": "SV09",
+  "name": "Chandni",
+  "value": "#eae4e0",
+  "page": 2
+ },
+ {
+  "number": "SV10",
+  "name": "Ellora",
+  "value": "#f9f2dd",
+  "page": 2
+ },
+ {
+  "number": "SV11",
+  "name": "Kagaz",
+  "value": "#ebefe3",
+  "page": 2
+ },
+ {
+  "number": "SV12",
+  "name": "Hans",
+  "value": "#eeeede",
+  "page": 2
+ },
+ {
+  "number": "SV13",
+  "name": "Jal Mahal",
+  "value": "#e7e4f0",
+  "page": 2
+ },
+ {
+  "number": "SV14",
+  "name": "Rann of Kutch",
+  "value": "#e9e3d8",
+  "page": 2
+ },
+ {
+  "number": "SV15",
+  "name": "Taj White",
+  "value": "#ebe7d8",
+  "page": 3
+ },
+ {
+  "number": "SV16",
+  "name": "Noor",
+  "value": "#dfdad0",
+  "page": 3
+ },
+ {
+  "number": "SV17",
+  "name": "Bahaar",
+  "value": "#f6e3d0",
+  "page": 3
+ },
+ {
+  "number": "SV18",
+  "name": "Chikankari",
+  "value": "#d8e2d2",
+  "page": 3
+ },
+ {
+  "number": "SV19",
+  "name": "Muga SIlk",
+  "value": "#f2e5cf",
+  "page": 3
+ },
+ {
+  "number": "SV20",
+  "name": "Madhurai Jasmine",
+  "value": "#efdecc",
+  "page": 3
+ },
+ {
+  "number": "SV21",
+  "name": "Raat Ki Rani",
+  "value": "#eee6d2",
+  "page": 3
+ },
+ {
+  "number": "SV22",
+  "name": "Resham",
+  "value": "#f7e5c5",
+  "page": 4
+ },
+ {
+  "number": "SV23",
+  "name": "Raag Multani",
+  "value": "#fae1bc",
+  "page": 4
+ },
+ {
+  "number": "SV24",
+  "name": "Kapas",
+  "value": "#ece6d3",
+  "page": 4
+ },
+ {
+  "number": "SV25",
+  "name": "Harappa",
+  "value": "#f7d9b2",
+  "page": 4
+ },
+ {
+  "number": "SV26",
+  "name": "Gurer",
+  "value": "#e4d6bb",
+  "page": 4
+ },
+ {
+  "number": "SV27",
+  "name": "Tussar",
+  "value": "#e5d7aa",
+  "page": 4
+ },
+ {
+  "number": "SV28",
+  "name": "Niloufer",
+  "value": "#e5d4c9",
+  "page": 4
+ },
+ {
+  "number": "SV29",
+  "name": "Oudh",
+  "value": "#d7cec4",
+  "page": 5
+ },
+ {
+  "number": "SV30",
+  "name": "Rani Ki Vav",
+  "value": "#ddc7ae",
+  "page": 5
+ },
+ {
+  "number": "SV31",
+  "name": "Jharokha",
+  "value": "#f7d5c6",
+  "page": 5
+ },
+ {
+  "number": "SV32",
+  "name": "Resham Bagh",
+  "value": "#e3d3c3",
+  "page": 5
+ },
+ {
+  "number": "SV33",
+  "name": "Khaddar",
+  "value": "#e0cab8",
+  "page": 5
+ },
+ {
+  "number": "SV34",
+  "name": "Badami Caves",
+  "value": "#f6cab7",
+  "page": 5
+ },
+ {
+  "number": "SV35",
+  "name": "Ajanta",
+  "value": "#d9c3b5",
+  "page": 5
+ },
+ {
+  "number": "SV36",
+  "name": "Sanchi Stupa",
+  "value": "#ead2c7",
+  "page": 6
+ },
+ {
+  "number": "SV37",
+  "name": "Akhbaar",
+  "value": "#dbd7d6",
+  "page": 6
+ },
+ {
+  "number": "SV38",
+  "name": "Pista Barfi",
+  "value": "#d6d8ca",
+  "page": 6
+ },
+ {
+  "number": "SV39",
+  "name": "White Fort",
+  "value": "#d5cac4",
+  "page": 6
+ },
+ {
+  "number": "SV40",
+  "name": "Gompa",
+  "value": "#e8d3cb",
+  "page": 6
+ },
+ {
+  "number": "SV41",
+  "name": "Cardamom Hills",
+  "value": "#c3cdc6",
+  "page": 6
+ },
+ {
+  "number": "SV42",
+  "name": "Haveli",
+  "value": "#d0c2b1",
+  "page": 6
+ },
+ {
+  "number": "SV43",
+  "name": "Hawa Mahal",
+  "value": "#d7ab9e",
+  "page": 7
+ },
+ {
+  "number": "SV44",
+  "name": "Mridangam",
+  "value": "#d2caac",
+  "page": 7
+ },
+ {
+  "number": "SV45",
+  "name": "Rajwada",
+  "value": "#d4c7b4",
+  "page": 7
  }
 ],
 "opus":[

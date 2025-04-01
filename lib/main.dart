@@ -127,6 +127,13 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       String jsonString = await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
         colors = Map<String, List<dynamic>>.from(json.decode(jsonString));
+        // Initialize filteredColors with all colors
+        filteredColors = Map.fromEntries(
+          colors.entries.map((entry) => MapEntry(
+                entry.key,
+                (entry.value as List).cast<dynamic>(),
+              )),
+        );
       });
     } catch (e) {
       print('Error loading colors: $e');
