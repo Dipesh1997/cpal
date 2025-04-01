@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import 'color_detail_page.dart';
 import 'favorites_page.dart';
+import 'screens/color_picker_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -76,7 +73,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
   void _handleMainTabChange() {
     if (_mainTabController.indexIsChanging) {
-      if (_mainTabController.index == 1) { // OPUS tab
+      if (_mainTabController.index == 1) {
+        // OPUS tab
         setState(() {
           _loadedItemsCount['opus'] = 20;
         });
@@ -124,7 +122,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
   Future<void> _loadColors() async {
     try {
-      String jsonString = await DefaultAssetBundle.of(context).loadString('assets/colors.json');
+      String jsonString =
+          await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
         colors = Map<String, List<dynamic>>.from(json.decode(jsonString));
         // Initialize filteredColors with all colors
@@ -154,13 +153,14 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         // Keep a copy of all colors for finding similar colors
         Map<String, List<dynamic>> allColors = Map.fromEntries(
           colors.entries.map((entry) => MapEntry(
-            entry.key,
-            (entry.value as List<dynamic>),
-          )),
+                entry.key,
+                (entry.value as List<dynamic>),
+              )),
         );
-        
+
         // Normalize the search query by removing spaces and special characters
-        String normalizedQuery = query.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        String normalizedQuery =
+            query.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) {
@@ -171,22 +171,23 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   // Safely get the number and value, providing defaults if null
                   String number = (color['number'] ?? '').toString();
                   String value = (color['value'] ?? '').toString();
-                  
+
                   // Normalize the number for comparison
-                  String normalizedNumber = number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+                  String normalizedNumber =
+                      number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
                   String normalizedValue = value.toLowerCase();
-                  
+
                   return normalizedNumber.contains(normalizedQuery) ||
-                         normalizedValue.contains(query.toLowerCase()) ||
-                         // Also check original number for exact matches with spaces/special chars
-                         number.toLowerCase().contains(query.toLowerCase());
+                      normalizedValue.contains(query.toLowerCase()) ||
+                      // Also check original number for exact matches with spaces/special chars
+                      number.toLowerCase().contains(query.toLowerCase());
                 } else {
                   // For other colors, safely check name and number
                   String name = (color['name'] ?? '').toString();
                   String number = (color['number'] ?? '').toString();
-                  
+
                   return name.toLowerCase().contains(query.toLowerCase()) ||
-                         number.toLowerCase().contains(query.toLowerCase());
+                      number.toLowerCase().contains(query.toLowerCase());
                 }
               } catch (e) {
                 print('Error filtering color: $e');
@@ -291,8 +292,10 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                               'tab': category,
                             },
                             onFavoriteToggle: toggleFavorite,
-                            isFavorite: favoriteColorNumbers.contains(color['number']),
-                            allColors: colors, // Pass the complete colors list instead of filtered
+                            isFavorite:
+                                favoriteColorNumbers.contains(color['number']),
+                            allColors:
+                                colors, // Pass the complete colors list instead of filtered
                           ),
                         ),
                       );
@@ -340,16 +343,18 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           // Safely get the number and value, providing defaults if null
           String number = (color['number'] ?? '').toString();
           String value = (color['value'] ?? '').toString();
-          
+
           // Normalize both the search query and the color number
-          String normalizedQuery = searchQuery.replaceAll(RegExp(r'[^a-z0-9]'), '');
-          String normalizedNumber = number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+          String normalizedQuery =
+              searchQuery.replaceAll(RegExp(r'[^a-z0-9]'), '');
+          String normalizedNumber =
+              number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
           String normalizedValue = value.toLowerCase();
-          
+
           return normalizedNumber.contains(normalizedQuery) ||
-                 normalizedValue.contains(searchQuery) ||
-                 // Also check original number for exact matches with spaces/special chars
-                 number.toLowerCase().contains(searchQuery);
+              normalizedValue.contains(searchQuery) ||
+              // Also check original number for exact matches with spaces/special chars
+              number.toLowerCase().contains(searchQuery);
         } catch (e) {
           print('Error filtering NCS color: $e');
           return false;
@@ -429,7 +434,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                               'tab': category,
                             },
                             onFavoriteToggle: toggleFavorite,
-                            isFavorite: favoriteColorNumbers.contains(color['number']),
+                            isFavorite:
+                                favoriteColorNumbers.contains(color['number']),
                             allColors: filteredColors,
                           ),
                         ),
@@ -473,7 +479,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   Widget _buildAsianTabView() {
     List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV'];
     List<String> visibleTabs = [];
-    
+
     // Only show tabs that have search results
     for (var tab in asianTabs) {
       if ((filteredColors[tab] ?? []).isNotEmpty) {
@@ -492,7 +498,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         children: [
           TabBar(
             isScrollable: true,
-            tabs: visibleTabs.map((tab) => Tab(text: tab.toUpperCase())).toList(),
+            tabs:
+                visibleTabs.map((tab) => Tab(text: tab.toUpperCase())).toList(),
           ),
           Expanded(
             child: TabBarView(
@@ -548,6 +555,19 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       appBar: AppBar(
         title: const Text('Color Palette'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ColorPickerPage(
+                    initialColors: colors,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.star),
             onPressed: () {

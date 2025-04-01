@@ -24,8 +24,17 @@ class FavoritesPage extends StatelessWidget {
     List<Map<String, dynamic>> favorites = [];
     allColors.forEach((category, colors) {
       for (var color in colors) {
+        // Skip colors that don't have required fields
+        if (color == null || color['number'] == null || color['value'] == null) continue;
+        
         if (favoriteColorNumbers.contains(color['number'])) {
-          favorites.add(color);
+          // Ensure all required fields have default values
+          favorites.add({
+            ...color,
+            'name': color['name'] ?? '',  // Default to empty string if name is null
+            'number': color['number'],
+            'value': color['value'],
+          });
         }
       }
     });
