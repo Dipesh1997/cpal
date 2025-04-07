@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
+import 'screens/full_screen_color_page.dart';
 
 class ColorDetailPage extends StatefulWidget {
   final Map<String, dynamic> color;
@@ -321,6 +322,30 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               margin: const EdgeInsets.all(16),
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: FloatingActionButton.small(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullScreenColorPage(
+                              colorHex: widget.color['value'],
+                              colorName: _getDisplayTitle(),
+                            ),
+                          ),
+                        );
+                      },
+                      backgroundColor: Colors.white.withOpacity(0.8),
+                      child: const Icon(Icons.fullscreen, color: Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
