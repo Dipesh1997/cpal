@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
+import 'package:provider/provider.dart';
 import 'screens/full_screen_color_page.dart';
+import 'providers/color_provider.dart';
 
 class ColorDetailPage extends StatefulWidget {
   final Map<String, dynamic> color;
+  final Map<String, List<dynamic>> allColors;
   final Function(String) onFavoriteToggle;
   final bool isFavorite;
-  final Map<String, List<dynamic>> allColors;
 
   const ColorDetailPage({
     super.key,
     required this.color,
+    required this.allColors,
     required this.onFavoriteToggle,
     required this.isFavorite,
-    required this.allColors,
   });
 
   @override
@@ -25,6 +26,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   late bool isFavorite;
   bool _isExpanded = false;
   List<Map<String, dynamic>> _similarColors = [];
+  late ColorProvider colorProvider;
 
   // Use a static cache for color conversion
   static final Map<String, Color> _colorCache = {};
@@ -32,6 +34,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   @override
   void initState() {
     super.initState();
+    colorProvider = Provider.of<ColorProvider>(context, listen: false);
     isFavorite = widget.isFavorite;
     _findSimilarColors();
   }
@@ -217,9 +220,9 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                   ...color,
                   'tab': color['tab'],
                 },
+                allColors: widget.allColors,
                 onFavoriteToggle: widget.onFavoriteToggle,
                 isFavorite: widget.isFavorite,
-                allColors: widget.allColors,
               ),
             ),
           );
@@ -301,7 +304,9 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
           ),
           IconButton(
             icon: Icon(
-              widget.isFavorite ? Icons.star : Icons.star_border,
+              widget.isFavorite
+                  ? Icons.star
+                  : Icons.star_border,
               color: Colors.yellow,
             ),
             onPressed: () {

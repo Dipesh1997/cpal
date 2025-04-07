@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'color_detail_page.dart';
 import 'favorites_page.dart';
 import 'screens/color_picker_page.dart';
+import 'screens/drawing_canvas_page.dart';
+import 'providers/color_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,14 +18,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Color Palette',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (context) => ColorProvider(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Color Palette',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const ColorPalettePage(),
       ),
-      home: const ColorPalettePage(),
     );
   }
 }
@@ -39,19 +45,18 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   late Map<String, List<dynamic>> colors;
   String searchQuery = '';
   Map<String, List<dynamic>> filteredColors = {};
-  Set<String> favoriteColorNumbers = {};
   late SharedPreferences prefs;
   bool isLoading = true;
   late TabController _mainTabController;
   TabController? _asianTabController;
   Map<String, int> _loadedItemsCount = {
-    'light': 999999,
-    'medium': 999999,
-    'dark': 999999,
+    'light': 20,
+    'medium': 20,
+    'dark': 20,
     'opus': 20,
-    'SA': 999999,
-    'SV': 999999,
-    'ncs': 999999,
+    'SA': 20,
+    'SV': 20,
+    'ncs': 20,
   };
   final Map<String, Color> _colorCache = {};
 
@@ -61,6 +66,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     loadColorsAndFavorites();
     _mainTabController = TabController(length: 3, vsync: this);
     _mainTabController.addListener(_handleMainTabChange);
+    Provider.of<ColorProvider>(context, listen: false).loadFavorites();
   }
 
   @override
@@ -93,31 +99,11 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       isLoading = true;
     });
 
-    // Load both colors and favorites concurrently
-    await Future.wait([
-      _loadColors(),
-      _loadFavorites(),
-    ]);
+    await _loadColors();
 
     setState(() {
       isLoading = false;
     });
-  }
-
-  Future<void> _loadFavorites() async {
-    prefs = await SharedPreferences.getInstance();
-    favoriteColorNumbers = prefs.getStringList('favorites')?.toSet() ?? {};
-  }
-
-  Future<void> toggleFavorite(String colorNumber) async {
-    setState(() {
-      if (favoriteColorNumbers.contains(colorNumber)) {
-        favoriteColorNumbers.remove(colorNumber);
-      } else {
-        favoriteColorNumbers.add(colorNumber);
-      }
-    });
-    await prefs.setStringList('favorites', favoriteColorNumbers.toList());
   }
 
   Future<void> _loadColors() async {
@@ -137,6 +123,10 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     } catch (e) {
       print('Error loading colors: $e');
     }
+  }
+
+  Future<void> toggleFavorite(String colorNumber) async {
+    Provider.of<ColorProvider>(context, listen: false).toggleFavorite(colorNumber);
   }
 
   void filterColors(String query) {
@@ -292,8 +282,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                               'tab': category,
                             },
                             onFavoriteToggle: toggleFavorite,
-                            isFavorite:
-                                favoriteColorNumbers.contains(color['number']),
+                            isFavorite: Provider.of<ColorProvider>(context, listen: false).isFavorite(color['number']),
                             allColors:
                                 colors, // Pass the complete colors list instead of filtered
                           ),
@@ -425,6 +414,19 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   elevation: 4,
                   child: InkWell(
                     onTap: () {
+                      if (color['value'] == null ||
+                          color['page'] == null ||
+                          color['position'] == null ||
+                          color['link'] == null) {
+                        // Show a snackbar for coming soon message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Coming Soon!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -434,8 +436,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                               'tab': category,
                             },
                             onFavoriteToggle: toggleFavorite,
-                            isFavorite:
-                                favoriteColorNumbers.contains(color['number']),
+                            isFavorite: Provider.of<ColorProvider>(context, listen: false).isFavorite(color['number']),
                             allColors: filteredColors,
                           ),
                         ),
@@ -449,20 +450,34 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           Expanded(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: hexToColor(color['value']),
+                                color: color['value'] != null
+                                    ? hexToColor(color['value'])
+                                    : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            color['number'],
+                            color['number'] ?? 'Coming Soon',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
                             textAlign: TextAlign.center,
                           ),
+                          if (color['value'] == null ||
+                              color['page'] == null ||
+                              color['position'] == null ||
+                              color['link'] == null)
+                            const Text(
+                              'Coming Soon',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                         ],
                       ),
                     ),
@@ -538,7 +553,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         OpusTabView(
           colors: filteredColors['opus'] ?? [],
           onFavoriteToggle: toggleFavorite,
-          favoriteColorNumbers: favoriteColorNumbers,
+          favoriteColorNumbers: Provider.of<ColorProvider>(context, listen: false).favoriteColorNumbers,
           filteredColors: filteredColors,
           hexToColor: hexToColor,
         ),
@@ -555,6 +570,17 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       appBar: AppBar(
         title: const Text('Color Palette'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DrawingCanvasPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.camera_alt),
             onPressed: () {
@@ -577,7 +603,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   builder: (context) => FavoritesPage(
                     allColors: filteredColors,
                     onFavoriteToggle: toggleFavorite,
-                    favoriteColorNumbers: favoriteColorNumbers,
+                    favoriteColorNumbers: Provider.of<ColorProvider>(context, listen: false).favoriteColorNumbers,
                   ),
                 ),
               );

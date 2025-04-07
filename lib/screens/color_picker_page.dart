@@ -8,6 +8,8 @@ import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../color_detail_page.dart';
+import '../providers/color_provider.dart';
+import 'package:provider/provider.dart';
 
 class ColorPickerPage extends StatefulWidget {
   final Map<String, List<dynamic>>? initialColors;
@@ -218,21 +220,14 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
             MaterialPageRoute(
               builder: (context) => ColorDetailPage(
                 color: color,
-                onFavoriteToggle: (colorId) async {
-                  // Handle favorite toggle
-                  SharedPreferences prefs = await SharedPreferences.getInstance();
-                  List<String> favorites = prefs.getStringList('favorites') ?? [];
-                  setState(() {
-                    if (favorites.contains(colorId)) {
-                      favorites.remove(colorId);
-                    } else {
-                      favorites.add(colorId);
-                    }
-                  });
-                  await prefs.setStringList('favorites', favorites);
+                allColors: colors,
+                onFavoriteToggle: (colorHex) {
+                  final colorProvider =
+                      Provider.of<ColorProvider>(context, listen: false);
+                  colorProvider.toggleFavorite(colorHex);
                 },
-                isFavorite: false, // You might want to check if this color is in favorites
-                allColors: widget.initialColors ?? {},
+                isFavorite: Provider.of<ColorProvider>(context, listen: false)
+                    .isFavorite(color['hex']),
               ),
             ),
           );
@@ -290,9 +285,30 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                           fontSize: 12,
                         ),
                       ),
-                      Text(
-                        color['value'] ?? '',
-                        style: const TextStyle(fontSize: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            color['value'] ?? '',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(width: 8),
+                          Consumer<ColorProvider>(
+                            builder: (context, colorProvider, _) {
+                              final isFavorite = colorProvider.isFavorite(color['hex']);
+                              return IconButton(
+                                icon: Icon(
+                                  isFavorite ? Icons.star : Icons.star_border,
+                                  color: isFavorite ? Colors.amber : Colors.grey,
+                                ),
+                                onPressed: () => colorProvider.toggleFavorite(color['hex']),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                iconSize: 20,
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -334,7 +350,8 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   itemCount: groupedColors[category]?.length ?? 0,
                   itemBuilder: (context, index) {
-                    return _buildSimilarColorCard(groupedColors[category]![index]);
+                    return _buildSimilarColorCard(
+                        groupedColors[category]![index]);
                   },
                 ),
               ],
