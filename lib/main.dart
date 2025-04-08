@@ -126,7 +126,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   }
 
   Future<void> toggleFavorite(String colorNumber) async {
-    Provider.of<ColorProvider>(context, listen: false).toggleFavorite(colorNumber);
+    Provider.of<ColorProvider>(context, listen: false)
+        .toggleFavorite(colorNumber);
   }
 
   void filterColors(String query) {
@@ -219,18 +220,18 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     Map<int, List<dynamic>> colorsByPage = {};
     for (var color in categoryColors) {
       try {
-        int page = int.tryParse(color['page']?.toString() ?? '1') ?? 1;
+        int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
         if (!colorsByPage.containsKey(page)) {
           colorsByPage[page] = [];
         }
         colorsByPage[page]!.add(color);
       } catch (e) {
         print('Error processing page number: $e');
-        // Add to page 1 if there's an error
-        if (!colorsByPage.containsKey(1)) {
-          colorsByPage[1] = [];
+        // Add to page 206 if there's an error
+        if (!colorsByPage.containsKey(206)) {
+          colorsByPage[206] = [];
         }
-        colorsByPage[1]!.add(color);
+        colorsByPage[206]!.add(color);
       }
     }
 
@@ -282,7 +283,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                               'tab': category,
                             },
                             onFavoriteToggle: toggleFavorite,
-                            isFavorite: Provider.of<ColorProvider>(context, listen: false).isFavorite(color['number']),
+                            isFavorite: Provider.of<ColorProvider>(context,
+                                    listen: false)
+                                .isFavorite(color['number']),
                             allColors:
                                 colors, // Pass the complete colors list instead of filtered
                           ),
@@ -360,18 +363,18 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     Map<int, List<dynamic>> colorsByPage = {};
     for (var color in categoryColors) {
       try {
-        int page = int.tryParse(color['page']?.toString() ?? '1') ?? 1;
+        int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
         if (!colorsByPage.containsKey(page)) {
           colorsByPage[page] = [];
         }
         colorsByPage[page]!.add(color);
       } catch (e) {
         print('Error processing page number: $e');
-        // Add to page 1 if there's an error
-        if (!colorsByPage.containsKey(1)) {
-          colorsByPage[1] = [];
+        // Add to page 206 if there's an error
+        if (!colorsByPage.containsKey(206)) {
+          colorsByPage[206] = [];
         }
-        colorsByPage[1]!.add(color);
+        colorsByPage[206]!.add(color);
       }
     }
 
@@ -436,7 +439,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                               'tab': category,
                             },
                             onFavoriteToggle: toggleFavorite,
-                            isFavorite: Provider.of<ColorProvider>(context, listen: false).isFavorite(color['number']),
+                            isFavorite: Provider.of<ColorProvider>(context,
+                                    listen: false)
+                                .isFavorite(color['number']),
                             allColors: filteredColors,
                           ),
                         ),
@@ -553,7 +558,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         OpusTabView(
           colors: filteredColors['opus'] ?? [],
           onFavoriteToggle: toggleFavorite,
-          favoriteColorNumbers: Provider.of<ColorProvider>(context, listen: false).favoriteColorNumbers,
+          favoriteColorNumbers:
+              Provider.of<ColorProvider>(context, listen: false)
+                  .favoriteColorNumbers,
           filteredColors: filteredColors,
           hexToColor: hexToColor,
         ),
@@ -603,7 +610,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   builder: (context) => FavoritesPage(
                     allColors: filteredColors,
                     onFavoriteToggle: toggleFavorite,
-                    favoriteColorNumbers: Provider.of<ColorProvider>(context, listen: false).favoriteColorNumbers,
+                    favoriteColorNumbers:
+                        Provider.of<ColorProvider>(context, listen: false)
+                            .favoriteColorNumbers,
                   ),
                 ),
               );
