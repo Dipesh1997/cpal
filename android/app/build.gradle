@@ -4,11 +4,10 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
-//    val keystoreProperties = Properties()
-  //  val keystorePropertiesFile = rootProject.file("key.properties")
-//    if (keystorePropertiesFile.exists()) {
-//    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-//    }
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
     namespace = "com.color.paletteasian"
     compileSdk = flutter.compileSdkVersion
@@ -34,17 +33,16 @@ android {
         versionName = flutter.versionName
     }
     signingConfigs {
-//        create("release") {
-//            keyAlias = keystoreProperties["keyAlias"]
-//            keyPassword = keystoreProperties["keyPassword"]
-//            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-//            storePassword = keystoreProperties["storePassword"]
-//        }
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
     }
     buildTypes {
         release {
-            // Temporarily disable for development
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
             // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
