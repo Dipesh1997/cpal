@@ -419,8 +419,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                     onTap: () {
                       if (color['value'] == null ||
                           color['page'] == null ||
-                          color['position'] == null ||
-                          color['link'] == null) {
+                          color['position'] == null) {
                         // Show a snackbar for coming soon message
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -473,8 +472,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           ),
                           if (color['value'] == null ||
                               color['page'] == null ||
-                              color['position'] == null ||
-                              color['link'] == null)
+                              color['position'] == null)
                             const Text(
                               'Coming Soon',
                               style: TextStyle(
