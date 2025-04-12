@@ -28825,904 +28825,1804 @@
   "position": 6
  },
  {
-  "number": "5020-Y20R"
+  "number": "5020-Y20R",
+  "value": "#94754E",
+  "page": 31,
+  "position": 7
  },
  {
-  "number": "5030-Y20R"
+  "number": "5030-Y20R",
+  "value": "#916B39",
+  "page": 32,
+  "position": 9
  },
  {
-  "number": "5040-Y20R"
+  "number": "5040-Y20R",
+  "value": "#8F6017",
+  "page": 32,
+  "position": 10
  },
  {
-  "number": "5502-Y20R"
+  "number": "5502-Y20R",
+  "value": "#7F7B74",
+  "page": 5,
+  "position": 8
  },
  {
-  "number": "6005-Y20R"
+  "number": "6005-Y20R",
+  "value": "#796F61",
+  "page": 30,
+  "position": 7
  },
  {
-  "number": "6020-Y20R"
+  "number": "6020-Y20R",
+  "value": "#785935",
+  "page": 31,
+  "position": 8
  },
  {
-  "number": "6030-Y20R"
+  "number": "6030-Y20R",
+  "value": "#765020",
+  "page": 31,
+  "position": 9
  },
  {
-  "number": "6502-Y20R"
+  "number": "6502-Y20R",
+  "value": "#6A6660",
+  "page": 5,
+  "position": 9
  },
  {
-  "number": "7005-Y20R"
+  "number": "7005-Y20R",
+  "value": "#5C5449",
+  "page": 30,
+  "position": 8
  },
  {
-  "number": "7020-Y20R"
+  "number": "7020-Y20R",
+  "value": "#60431D",
+  "page": 31,
+  "position": 10
  },
  {
-  "number": "8005-Y20R"
+  "number": "8005-Y20R",
+  "value": "#43392E",
+  "page": 30,
+  "position": 9
  },
  {
-  "number": "8505-Y20R"
+  "number": "8505-Y20R",
+  "value": "#2B200F",
+  "page": 30,
+  "position": 10
  },
  {
-  "number": "0505-Y30R"
+  "number": "0505-Y30R",
+  "value": "#FFF2DB",
+  "page": 36,
+  "position": 1
  },
  {
-  "number": "0510-Y30R"
+  "number": "0510-Y30R",
+  "value": "#FFEBCC",
+  "page": 36,
+  "position": 2
  },
  {
-  "number": "0515-Y30R"
+  "number": "0515-Y30R",
+  "value": "#FFE1B8",
+  "page": 37,
+  "position": 1
  },
  {
-  "number": "0520-Y30R"
+  "number": "0520-Y30R",
+  "value": "#FFDDAF",
+  "page": 38,
+  "position": 1
  },
  {
-  "number": "0530-Y30R"
+  "number": "0530-Y30R",
+  "value": "#FFCF93",
+  "page": 39,
+  "position": 1
  },
  {
-  "number": "0540-Y30R"
+  "number": "0540-Y30R",
+  "value": "#FFC077",
+  "page": 40,
+  "position": 1
  },
  {
-  "number": "0550-Y30R"
+  "number": "0550-Y30R",
+  "value": "#FFB867",
+  "page": 41,
+  "position": 1
  },
  {
-  "number": "0560-Y30R"
+  "number": "0560-Y30R",
+  "value": "#FFB151",
+  "page": 41,
+  "position": 2
  },
  {
-  "number": "0570-Y30R"
+  "number": "0570-Y30R",
+  "value": "#FFA437",
+  "page": 41,
+  "position": 3
  },
  {
-  "number": "0580-Y30R"
+  "number": "0580-Y30R",
+  "value": "#FF9C00",
+  "page": 41,
+  "position": 4
  },
  {
-  "number": "0585-Y30R"
+  "number": "0585-Y30R",
+  "value": "#FF9C00",
+  "page": 41,
+  "position": 5
  },
  {
-  "number": "0804-Y30R"
+  "number": "0804-Y30R",
+  "value": "#F5EDDD",
+  "page": 36,
+  "position": 3
  },
  {
-  "number": "0907-Y30R"
+  "number": "0907-Y30R",
+  "value": "#F5E5CD",
+  "page": 36,
+  "position": 4
  },
  {
-  "number": "1005-Y30R"
+  "number": "1005-Y30R",
+  "value": "#EBE1CF",
+  "page": 36,
+  "position": 5
  },
  {
-  "number": "1010-Y30R"
+  "number": "1010-Y30R",
+  "value": "#F2DEC0",
+  "page": 36,
+  "position": 6
  },
  {
-  "number": "1015-Y30R"
+  "number": "1015-Y30R",
+  "value": "#F8D9B1",
+  "page": 37,
+  "position": 2
  },
  {
-  "number": "1020-Y30R"
+  "number": "1020-Y30R",
+  "value": "#FAD3A1",
+  "page": 38,
+  "position": 2
  },
  {
-  "number": "1030-Y30R"
+  "number": "1030-Y30R",
+  "value": "#FCC78B",
+  "page": 39,
+  "position": 2
  },
  {
-  "number": "1040-Y30R"
+  "number": "1040-Y30R",
+  "value": "#FFBC70",
+  "page": 40,
+  "position": 2
  },
  {
-  "number": "1050-Y30R"
+  "number": "1050-Y30R",
+  "value": "#FEB05A",
+  "page": 40,
+  "position": 3
  },
  {
-  "number": "1060-Y30R"
+  "number": "1060-Y30R",
+  "value": "#FFA43E",
+  "page": 41,
+  "position": 6
  },
  {
-  "number": "1070-Y30R"
+  "number": "1070-Y30R",
+  "value": "#FA971B",
+  "page": 41,
+  "position": 7
  },
  {
-  "number": "1080-Y30R"
+  "number": "1080-Y30R",
+  "value": "#EE8F00",
+  "page": 41,
+  "position": 8
  },
  {
-  "number": "1505-Y30R"
+  "number": "1505-Y30R",
+  "value": "#E2D7C5",
+  "page": 36,
+  "position": 7
  },
  {
-  "number": "1510-Y30R"
+  "number": "1510-Y30R",
+  "value": "#E6D1B3",
+  "page": 36,
+  "position": 8
  },
  {
-  "number": "1515-Y30R"
+  "number": "1515-Y30R",
+  "value": "#EACBA5",
+  "page": 37,
+  "position": 3
  },
  {
-  "number": "2005-Y30R"
+  "number": "2005-Y30R",
+  "value": "#D3C9B8",
+  "page": 36,
+  "position": 9
  },
  {
-  "number": "2010-Y30R"
+  "number": "2010-Y30R",
+  "value": "#DDC9AC",
+  "page": 36,
+  "position": 10
  },
  {
-  "number": "2020-Y30R"
+  "number": "2020-Y30R",
+  "value": "#DEBA90",
+  "page": 38,
+  "position": 3
  },
  {
-  "number": "2030-Y30R"
+  "number": "2030-Y30R",
+  "value": "#E1AC73",
+  "page": 39,
+  "position": 3
  },
  {
-  "number": "2040-Y30R"
+  "number": "2040-Y30R",
+  "value": "#E3A45F",
+  "page": 40,
+  "position": 4
  },
  {
-  "number": "2050-Y30R"
+  "number": "2050-Y30R",
+  "value": "#E19645",
+  "page": 40,
+  "position": 5
  },
  {
-  "number": "2060-Y30R"
+  "number": "2060-Y30R",
+  "value": "#DE8C30",
+  "page": 40,
+  "position": 6
  },
  {
-  "number": "2070-Y30R"
+  "number": "2070-Y30R",
+  "value": "#DA8000",
+  "page": 41,
+  "position": 9
  },
  {
-  "number": "2570-Y30R"
+  "number": "2570-Y30R",
+  "value": "#C77900",
+  "page": 41,
+  "position": 10
  },
  {
-  "number": "3010-Y30R"
+  "number": "3010-Y30R",
+  "value": "#C2AC92",
+  "page": 37,
+  "position": 5
  },
  {
-  "number": "3020-Y30R"
+  "number": "3020-Y30R",
+  "value": "#C59F76",
+  "page": 38,
+  "position": 4
  },
  {
-  "number": "3030-Y30R"
+  "number": "3030-Y30R",
+  "value": "#C69562",
+  "page": 39,
+  "position": 4
  },
  {
-  "number": "3040-Y30R"
+  "number": "3040-Y30R",
+  "value": "#C4894C",
+  "page": 39,
+  "position": 5
  },
  {
-  "number": "3050-Y30R"
+  "number": "3050-Y30R",
+  "value": "#C17D36",
+  "page": 40,
+  "position": 7
  },
  {
-  "number": "3060-Y30R"
+  "number": "3060-Y30R",
+  "value": "#C07209",
+  "page": 40,
+  "position": 8
  },
  {
-  "number": "3560-Y30R"
+  "number": "3560-Y30R",
+  "value": "#A96400",
+  "page": 40,
+  "position": 9
  },
  {
-  "number": "4010-Y30R"
+  "number": "4010-Y30R",
+  "value": "#AA9680",
+  "page": 37,
+  "position": 6
  },
  {
-  "number": "4020-Y30R"
+  "number": "4020-Y30R",
+  "value": "#AE8B66",
+  "page": 38,
+  "position": 5
  },
  {
-  "number": "4030-Y30R"
+  "number": "4030-Y30R",
+  "value": "#AF7E4F",
+  "page": 39,
+  "position": 6
  },
  {
-  "number": "4040-Y30R"
+  "number": "4040-Y30R",
+  "value": "#AA7238",
+  "page": 39,
+  "position": 7
  },
  {
-  "number": "4050-Y30R"
+  "number": "4050-Y30R",
+  "value": "#A5651A",
+  "page": 40,
+  "position": 10
  },
  {
-  "number": "4550-Y30R"
+  "number": "4550-Y30R",
+  "value": "#945700",
+  "page": 39,
+  "position": 8
  },
  {
-  "number": "5010-Y30R"
+  "number": "5010-Y30R",
+  "value": "#937C65",
+  "page": 37,
+  "position": 7
  },
  {
-  "number": "5020-Y30R"
+  "number": "5020-Y30R",
+  "value": "#916F4D",
+  "page": 38,
+  "position": 6
  },
  {
-  "number": "5030-Y30R"
+  "number": "5030-Y30R",
+  "value": "#916438",
+  "page": 38,
+  "position": 7
  },
  {
-  "number": "5040-Y30R"
+  "number": "5040-Y30R",
+  "value": "#905919",
+  "page": 39,
+  "position": 9
  },
  {
-  "number": "6010-Y30R"
+  "number": "6010-Y30R",
+  "value": "#806954",
+  "page": 37,
+  "position": 8
  },
  {
-  "number": "6020-Y30R"
+  "number": "6020-Y30R",
+  "value": "#7A5838",
+  "page": 38,
+  "position": 8
  },
  {
-  "number": "6030-Y30R"
+  "number": "6030-Y30R",
+  "value": "#794D1D",
+  "page": 38,
+  "position": 9
  },
  {
-  "number": "7010-Y30R"
+  "number": "7010-Y30R",
+  "value": "#624E3C",
+  "page": 37,
+  "position": 9
  },
  {
-  "number": "7020-Y30R"
+  "number": "7020-Y30R",
+  "value": "#5E3C17",
+  "page": 38,
+  "position": 10
  },
  {
-  "number": "8010-Y30R"
+  "number": "8010-Y30R",
+  "value": "#432D14",
+  "page": 37,
+  "position": 10
  },
  {
-  "number": "0505-Y40R"
+  "number": "0505-Y40R",
+  "value": "#FFF2DE",
+  "page": 42,
+  "position": 2
  },
  {
-  "number": "0507-Y40R"
+  "number": "0507-Y40R",
+  "value": "#FFEED8",
+  "page": 42,
+  "position": 3
  },
  {
-  "number": "0510-Y40R"
+  "number": "0510-Y40R",
+  "value": "#FFE7CB",
+  "page": 42,
+  "position": 4
  },
  {
-  "number": "0515-Y40R"
+  "number": "0515-Y40R",
+  "value": "#FFDCB9",
+  "page": 44,
+  "position": 1
  },
  {
-  "number": "0520-Y40R"
+  "number": "0520-Y40R",
+  "value": "#FFD5AC",
+  "page": 45,
+  "position": 1
  },
  {
-  "number": "0530-Y40R"
+  "number": "0530-Y40R",
+  "value": "#FFC694",
+  "page": 46,
+  "position": 1
  },
  {
-  "number": "0540-Y40R"
+  "number": "0540-Y40R",
+  "value": "#FFB779",
+  "page": 46,
+  "position": 2
  },
  {
-  "number": "0550-Y40R"
+  "number": "0550-Y40R",
+  "value": "#FFAB66",
+  "page": 46,
+  "position": 3
  },
  {
-  "number": "0560-Y40R"
+  "number": "0560-Y40R",
+  "value": "#FFA351",
+  "page": 47,
+  "position": 1
  },
  {
-  "number": "0570-Y40R"
+  "number": "0570-Y40R",
+  "value": "#FF973C",
+  "page": 47,
+  "position": 2
  },
  {
-  "number": "0580-Y40R"
+  "number": "0580-Y40R",
+  "value": "#FF8F00",
+  "page": 47,
+  "position": 3
  },
  {
-  "number": "0585-Y40R"
+  "number": "0585-Y40R",
+  "value": "#FD8B00",
+  "page": 47,
+  "position": 4
  },
  {
-  "number": "0603-Y40R"
+  "number": "0603-Y40R",
+  "value": "#F9F2E7",
+  "page": 42,
+  "position": 1
  },
  {
-  "number": "1005-Y40R"
+  "number": "1005-Y40R",
+  "value": "#EEE2D2",
+  "page": 42,
+  "position": 5
  },
  {
-  "number": "1010-Y40R"
+  "number": "1010-Y40R",
+  "value": "#F2DABE",
+  "page": 42,
+  "position": 6
  },
  {
-  "number": "1015-Y40R"
+  "number": "1015-Y40R",
+  "value": "#F7D5B3",
+  "page": 44,
+  "position": 2
  },
  {
-  "number": "1020-Y40R"
+  "number": "1020-Y40R",
+  "value": "#FACBA2",
+  "page": 45,
+  "position": 2
  },
  {
-  "number": "1030-Y40R"
+  "number": "1030-Y40R",
+  "value": "#FFC18D",
+  "page": 45,
+  "position": 3
  },
  {
-  "number": "1040-Y40R"
+  "number": "1040-Y40R",
+  "value": "#FCB275",
+  "page": 45,
+  "position": 4
  },
  {
-  "number": "1050-Y40R"
+  "number": "1050-Y40R",
+  "value": "#FCA55C",
+  "page": 46,
+  "position": 4
  },
  {
-  "number": "1060-Y40R"
+  "number": "1060-Y40R",
+  "value": "#FB9746",
+  "page": 46,
+  "position": 5
  },
  {
-  "number": "1070-Y40R"
+  "number": "1070-Y40R",
+  "value": "#F98B23",
+  "page": 47,
+  "position": 5
  },
  {
-  "number": "1080-Y40R"
+  "number": "1080-Y40R",
+  "value": "#EC7E00",
+  "page": 47,
+  "position": 6
  },
  {
-  "number": "1505-Y40R"
+  "number": "1505-Y40R",
+  "value": "#E0D4C5",
+  "page": 42,
+  "position": 7
  },
  {
-  "number": "1510-Y40R"
+  "number": "1510-Y40R",
+  "value": "#E7CEB5",
+  "page": 42,
+  "position": 8
  },
  {
-  "number": "1515-Y40R"
+  "number": "1515-Y40R",
+  "value": "#EBC8A7",
+  "page": 44,
+  "position": 3
  },
  {
-  "number": "2005-Y40R"
+  "number": "2005-Y40R",
+  "value": "#D3C6B6",
+  "page": 42,
+  "position": 9
  },
  {
-  "number": "2010-Y40R"
+  "number": "2010-Y40R",
+  "value": "#D8BEA4",
+  "page": 42,
+  "position": 10
  },
  {
-  "number": "2020-Y40R"
+  "number": "2020-Y40R",
+  "value": "#DBB28D",
+  "page": 44,
+  "position": 4
  },
  {
-  "number": "2030-Y40R"
+  "number": "2030-Y40R",
+  "value": "#DFA374",
+  "page": 44,
+  "position": 5
  },
  {
-  "number": "2040-Y40R"
+  "number": "2040-Y40R",
+  "value": "#E49B60",
+  "page": 45,
+  "position": 5
  },
  {
-  "number": "2050-Y40R"
+  "number": "2050-Y40R",
+  "value": "#E28F4A",
+  "page": 46,
+  "position": 6
  },
  {
-  "number": "2060-Y40R"
+  "number": "2060-Y40R",
+  "value": "#DA7F2E",
+  "page": 46,
+  "position": 7
  },
  {
-  "number": "2070-Y40R"
+  "number": "2070-Y40R",
+  "value": "#D57100",
+  "page": 47,
+  "position": 7
  },
  {
-  "number": "2570-Y40R"
+  "number": "2570-Y40R",
+  "value": "#C46A00",
+  "page": 47,
+  "position": 8
  },
  {
-  "number": "3010-Y40R"
+  "number": "3010-Y40R",
+  "value": "#C0A790",
+  "page": 43,
+  "position": 5
  },
  {
-  "number": "3020-Y40R"
+  "number": "3020-Y40R",
+  "value": "#C19979",
+  "page": 43,
+  "position": 6
  },
  {
-  "number": "3030-Y40R"
+  "number": "3030-Y40R",
+  "value": "#C68E61",
+  "page": 44,
+  "position": 6
  },
  {
-  "number": "3040-Y40R"
+  "number": "3040-Y40R",
+  "value": "#C5814D",
+  "page": 45,
+  "position": 6
  },
  {
-  "number": "3050-Y40R"
+  "number": "3050-Y40R",
+  "value": "#C47536",
+  "page": 45,
+  "position": 7
  },
  {
-  "number": "3060-Y40R"
+  "number": "3060-Y40R",
+  "value": "#BC6515",
+  "page": 46,
+  "position": 8
  },
  {
-  "number": "3560-Y40R"
+  "number": "3560-Y40R",
+  "value": "#AF5C00",
+  "page": 46,
+  "position": 9
  },
  {
-  "number": "4020-Y40R"
+  "number": "4020-Y40R",
+  "value": "#AC8464",
+  "page": 43,
+  "position": 7
  },
  {
-  "number": "4030-Y40R"
+  "number": "4030-Y40R",
+  "value": "#AB754D",
+  "page": 44,
+  "position": 7
  },
  {
-  "number": "4040-Y40R"
+  "number": "4040-Y40R",
+  "value": "#A66637",
+  "page": 45,
+  "position": 8
  },
  {
-  "number": "4050-Y40R"
+  "number": "4050-Y40R",
+  "value": "#A45A18",
+  "page": 45,
+  "position": 9
  },
  {
-  "number": "4550-Y40R"
+  "number": "4550-Y40R",
+  "value": "#995000",
+  "page": 45,
+  "position": 10
  },
  {
-  "number": "5020-Y40R"
+  "number": "5020-Y40R",
+  "value": "#966E50",
+  "page": 43,
+  "position": 8
  },
  {
-  "number": "5030-Y40R"
+  "number": "5030-Y40R",
+  "value": "#905E39",
+  "page": 44,
+  "position": 8
  },
  {
-  "number": "5040-Y40R"
+  "number": "5040-Y40R",
+  "value": "#90511C",
+  "page": 44,
+  "position": 9
  },
  {
-  "number": "6020-Y40R"
+  "number": "6020-Y40R",
+  "value": "#7C5437",
+  "page": 43,
+  "position": 9
  },
  {
-  "number": "6030-Y40R"
+  "number": "6030-Y40R",
+  "value": "#784519",
+  "page": 44,
+  "position": 10
  },
  {
-  "number": "7020-Y40R"
+  "number": "7020-Y40R",
+  "value": "#613C1E",
+  "page": 43,
+  "position": 10
  },
  {
-  "number": "0502-Y50R"
+  "number": "0502-Y50R",
+  "value": "#FAF5EF",
+  "page": 6,
+  "position": 1
  },
  {
-  "number": "0505-Y50R"
+  "number": "0505-Y50R",
+  "value": "#FDEFDE",
+  "page": 48,
+  "position": 2
  },
  {
-  "number": "0510-Y50R"
+  "number": "0510-Y50R",
+  "value": "#FFE7D1",
+  "page": 50,
+  "position": 1
  },
  {
-  "number": "0515-Y50R"
+  "number": "0515-Y50R",
+  "value": "#FFDCC0",
+  "page": 51,
+  "position": 1
  },
  {
-  "number": "0520-Y50R"
+  "number": "0520-Y50R",
+  "value": "#FFD1AF",
+  "page": 51,
+  "position": 2
  },
  {
-  "number": "0530-Y50R"
+  "number": "0530-Y50R",
+  "value": "#FFC299",
+  "page": 52,
+  "position": 1
  },
  {
-  "number": "0540-Y50R"
+  "number": "0540-Y50R",
+  "value": "#FFB27F",
+  "page": 53,
+  "position": 1
  },
  {
-  "number": "0550-Y50R"
+  "number": "0550-Y50R",
+  "value": "#FFA267",
+  "page": 54,
+  "position": 1
  },
  {
-  "number": "0560-Y50R"
+  "number": "0560-Y50R",
+  "value": "#FF9A5B",
+  "page": 54,
+  "position": 2
  },
  {
-  "number": "0570-Y50R"
+  "number": "0570-Y50R",
+  "value": "#FF8836",
+  "page": 54,
+  "position": 3
  },
  {
-  "number": "0580-Y50R"
+  "number": "0580-Y50R",
+  "value": "#FF7A00",
+  "page": 54,
+  "position": 4
  },
  {
-  "number": "0585-Y50R"
+  "number": "0585-Y50R",
+  "value": "#FF8000",
+  "page": 54,
+  "position": 5
  },
  {
-  "number": "0804-Y50R"
+  "number": "0804-Y50R",
+  "value": "#F5EADE",
+  "page": 48,
+  "position": 3
  },
  {
-  "number": "0907-Y50R"
+  "number": "0907-Y50R",
+  "value": "#F5E2D1",
+  "page": 48,
+  "position": 4
  },
  {
-  "number": "1002-Y50R"
+  "number": "1002-Y50R",
+  "value": "#ECE7E1",
+  "page": 6,
+  "position": 2
  },
  {
-  "number": "1005-Y50R"
+  "number": "1005-Y50R",
+  "value": "#EFE1D2",
+  "page": 48,
+  "position": 6
  },
  {
-  "number": "1010-Y50R"
+  "number": "1010-Y50R",
+  "value": "#F4D8C0",
+  "page": 50,
+  "position": 2
  },
  {
-  "number": "1015-Y50R"
+  "number": "1015-Y50R",
+  "value": "#F7D2B6",
+  "page": 51,
+  "position": 3
  },
  {
-  "number": "1020-Y50R"
+  "number": "1020-Y50R",
+  "value": "#FCCBA8",
+  "page": 51,
+  "position": 4
  },
  {
-  "number": "1030-Y50R"
+  "number": "1030-Y50R",
+  "value": "#FFBA8F",
+  "page": 52,
+  "position": 2
  },
  {
-  "number": "1040-Y50R"
+  "number": "1040-Y50R",
+  "value": "#FFAE7A",
+  "page": 53,
+  "position": 2
  },
  {
-  "number": "1050-Y50R"
+  "number": "1050-Y50R",
+  "value": "#FD9F63",
+  "page": 53,
+  "position": 3
  },
  {
-  "number": "1060-Y50R"
+  "number": "1060-Y50R",
+  "value": "#F98C48",
+  "page": 53,
+  "position": 4
  },
  {
-  "number": "1070-Y50R"
+  "number": "1070-Y50R",
+  "value": "#F57E28",
+  "page": 54,
+  "position": 6
  },
  {
-  "number": "1080-Y50R"
+  "number": "1080-Y50R",
+  "value": "#E97200",
+  "page": 54,
+  "position": 7
  },
  {
-  "number": "1502-Y50R"
+  "number": "1502-Y50R",
+  "value": "#DDD8D1",
+  "page": 6,
+  "position": 3
  },
  {
-  "number": "1505-Y50R"
+  "number": "1505-Y50R",
+  "value": "#E1D4C7",
+  "page": 48,
+  "position": 8
  },
  {
-  "number": "1510-Y50R"
+  "number": "1510-Y50R",
+  "value": "#E7CCB7",
+  "page": 48,
+  "position": 9
  },
  {
-  "number": "1515-Y50R"
+  "number": "1515-Y50R",
+  "value": "#E9C4A9",
+  "page": 51,
+  "position": 5
  },
  {
-  "number": "2002-Y50R"
+  "number": "2002-Y50R",
+  "value": "#D0CAC3",
+  "page": 6,
+  "position": 4
  },
  {
-  "number": "2005-Y50R"
+  "number": "2005-Y50R",
+  "value": "#D0C5B9",
+  "page": 48,
+  "position": 10
  },
  {
-  "number": "2010-Y50R"
+  "number": "2010-Y50R",
+  "value": "#D8BDA7",
+  "page": 50,
+  "position": 3
  },
  {
-  "number": "2020-Y50R"
+  "number": "2020-Y50R",
+  "value": "#DCAD8E",
+  "page": 51,
+  "position": 6
  },
  {
-  "number": "2030-Y50R"
+  "number": "2030-Y50R",
+  "value": "#E3A079",
+  "page": 52,
+  "position": 3
  },
  {
-  "number": "2040-Y50R"
+  "number": "2040-Y50R",
+  "value": "#E19362",
+  "page": 52,
+  "position": 4
  },
  {
-  "number": "2050-Y50R"
+  "number": "2050-Y50R",
+  "value": "#DF854F",
+  "page": 53,
+  "position": 5
  },
  {
-  "number": "2060-Y50R"
+  "number": "2060-Y50R",
+  "value": "#D6712E",
+  "page": 54,
+  "position": 8
  },
  {
-  "number": "2070-Y50R"
+  "number": "2070-Y50R",
+  "value": "#D6660F",
+  "page": 54,
+  "position": 9
  },
  {
-  "number": "2502-Y50R"
+  "number": "2502-Y50R",
+  "value": "#C4BFB9",
+  "page": 6,
+  "position": 5
  },
  {
-  "number": "2570-Y50R"
+  "number": "2570-Y50R",
+  "value": "#BE5B00",
+  "page": 54,
+  "position": 10
  },
  {
-  "number": "3005-Y50R"
+  "number": "3005-Y50R",
+  "value": "#B8AB9F",
+  "page": 49,
+  "position": 3
  },
  {
-  "number": "3010-Y50R"
+  "number": "3010-Y50R",
+  "value": "#C3A996",
+  "page": 50,
+  "position": 4
  },
  {
-  "number": "3020-Y50R"
+  "number": "3020-Y50R",
+  "value": "#CA9C7F",
+  "page": 51,
+  "position": 7
  },
  {
-  "number": "3030-Y50R"
+  "number": "3030-Y50R",
+  "value": "#C88A64",
+  "page": 52,
+  "position": 5
  },
  {
-  "number": "3040-Y50R"
+  "number": "3040-Y50R",
+  "value": "#C47A4F",
+  "page": 52,
+  "position": 6
  },
  {
-  "number": "3050-Y50R"
+  "number": "3050-Y50R",
+  "value": "#BC6A37",
+  "page": 53,
+  "position": 6
  },
  {
-  "number": "3060-Y50R"
+  "number": "3060-Y50R",
+  "value": "#BA5D14",
+  "page": 53,
+  "position": 7
  },
  {
-  "number": "3502-Y50R"
+  "number": "3502-Y50R",
+  "value": "#ACA7A0",
+  "page": 6,
+  "position": 6
  },
  {
-  "number": "3560-Y50R"
+  "number": "3560-Y50R",
+  "value": "#A95106",
+  "page": 53,
+  "position": 8
  },
  {
-  "number": "4005-Y50R"
+  "number": "4005-Y50R",
+  "value": "#A3968B",
+  "page": 49,
+  "position": 4
  },
  {
-  "number": "4010-Y50R"
+  "number": "4010-Y50R",
+  "value": "#AB9383",
+  "page": 50,
+  "position": 5
  },
  {
-  "number": "4020-Y50R"
+  "number": "4020-Y50R",
+  "value": "#AE8166",
+  "page": 51,
+  "position": 8
  },
  {
-  "number": "4030-Y50R"
+  "number": "4030-Y50R",
+  "value": "#AC724F",
+  "page": 51,
+  "position": 9
  },
  {
-  "number": "4040-Y50R"
+  "number": "4040-Y50R",
+  "value": "#AA6439",
+  "page": 52,
+  "position": 7
  },
  {
-  "number": "4050-Y50R"
+  "number": "4050-Y50R",
+  "value": "#9F511D",
+  "page": 53,
+  "position": 9
  },
  {
-  "number": "4502-Y50R"
+  "number": "4502-Y50R",
+  "value": "#97928B",
+  "page": 6,
+  "position": 7
  },
  {
-  "number": "4550-Y50R"
+  "number": "4550-Y50R",
+  "value": "#934500",
+  "page": 53,
+  "position": 10
  },
  {
-  "number": "5005-Y50R"
+  "number": "5005-Y50R",
+  "value": "#8E8278",
+  "page": 49,
+  "position": 5
  },
  {
-  "number": "5010-Y50R"
+  "number": "5010-Y50R",
+  "value": "#937B6B",
+  "page": 50,
+  "position": 6
  },
  {
-  "number": "5020-Y50R"
+  "number": "5020-Y50R",
+  "value": "#956C53",
+  "page": 51,
+  "position": 10
  },
  {
-  "number": "5030-Y50R"
+  "number": "5030-Y50R",
+  "value": "#925A3A",
+  "page": 52,
+  "position": 8
  },
  {
-  "number": "5040-Y50R"
+  "number": "5040-Y50R",
+  "value": "#8C4719",
+  "page": 52,
+  "position": 9
  },
  {
-  "number": "5502-Y50R"
+  "number": "5502-Y50R",
+  "value": "#817C77",
+  "page": 6,
+  "position": 8
  },
  {
-  "number": "6005-Y50R"
+  "number": "6005-Y50R",
+  "value": "#7B6C62",
+  "page": 49,
+  "position": 6
  },
  {
-  "number": "6010-Y50R"
+  "number": "6010-Y50R",
+  "value": "#7A6254",
+  "page": 50,
+  "position": 7
  },
  {
-  "number": "6020-Y50R"
+  "number": "6020-Y50R",
+  "value": "#7C533A",
+  "page": 50,
+  "position": 8
  },
  {
-  "number": "6030-Y50R"
+  "number": "6030-Y50R",
+  "value": "#784320",
+  "page": 52,
+  "position": 10
  },
  {
-  "number": "6502-Y50R"
+  "number": "6502-Y50R",
+  "value": "#6B655F",
+  "page": 6,
+  "position": 9
  },
  {
-  "number": "7005-Y50R"
+  "number": "7005-Y50R",
+  "value": "#61554D",
+  "page": 49,
+  "position": 7
  },
  {
-  "number": "7010-Y50R"
+  "number": "7010-Y50R",
+  "value": "#664C3D",
+  "page": 50,
+  "position": 9
  },
  {
-  "number": "7020-Y50R"
+  "number": "7020-Y50R",
+  "value": "#603514",
+  "page": 50,
+  "position": 10
  },
  {
-  "number": "8005-Y50R"
+  "number": "8005-Y50R",
+  "value": "#44362B",
+  "page": 49,
+  "position": 8
  },
  {
-  "number": "8010-Y50R"
+  "number": "8010-Y50R",
+  "value": "#442C1A",
+  "page": 49,
+  "position": 10
  },
  {
-  "number": "8505-Y50R"
+  "number": "8505-Y50R",
+  "value": "#332210",
+  "page": 49,
+  "position": 9
  },
  {
-  "number": "0505-Y60R"
+  "number": "0505-Y60R",
+  "value": "#FFF1E5",
+  "page": 55,
+  "position": 2
  },
  {
-  "number": "0507-Y60R"
+  "number": "0507-Y60R",
+  "value": "#FFEEE0",
+  "page": 55,
+  "position": 3
  },
  {
-  "number": "0510-Y60R"
+  "number": "0510-Y60R",
+  "value": "#FFE6D5",
+  "page": 55,
+  "position": 4
  },
  {
-  "number": "0515-Y60R"
+  "number": "0515-Y60R",
+  "value": "#FFDBC6",
+  "page": 57,
+  "position": 1
  },
  {
-  "number": "0520-Y60R"
+  "number": "0520-Y60R",
+  "value": "#FFD0B4",
+  "page": 58,
+  "position": 1
  },
  {
-  "number": "0530-Y60R"
+  "number": "0530-Y60R",
+  "value": "#FFBD9B",
+  "page": 59,
+  "position": 1
  },
  {
-  "number": "0540-Y60R"
+  "number": "0540-Y60R",
+  "value": "#FFAE87",
+  "page": 59,
+  "position": 2
  },
  {
-  "number": "0550-Y60R"
+  "number": "0550-Y60R",
+  "value": "#FF9D71",
+  "page": 59,
+  "position": 3
  },
  {
-  "number": "0560-Y60R"
+  "number": "0560-Y60R",
+  "value": "#FF9562",
+  "page": 60,
+  "position": 1
  },
  {
-  "number": "0570-Y60R"
+  "number": "0570-Y60R",
+  "value": "#FF8346",
+  "page": 60,
+  "position": 2
  },
  {
-  "number": "0580-Y60R"
+  "number": "0580-Y60R",
+  "value": "#FE6907",
+  "page": 60,
+  "position": 3
  },
  {
-  "number": "0585-Y60R"
+  "number": "0585-Y60R",
+  "value": "#F96900",
+  "page": 60,
+  "position": 4
  },
  {
-  "number": "0603-Y60R"
+  "number": "0603-Y60R",
+  "value": "#FBF3EB",
+  "page": 55,
+  "position": 1
  },
  {
-  "number": "1005-Y60R"
+  "number": "1005-Y60R",
+  "value": "#ECDFD4",
+  "page": 55,
+  "position": 5
  },
  {
-  "number": "1010-Y60R"
+  "number": "1010-Y60R",
+  "value": "#F1D7C5",
+  "page": 55,
+  "position": 6
  },
  {
-  "number": "1015-Y60R"
+  "number": "1015-Y60R",
+  "value": "#F6D1BA",
+  "page": 57,
+  "position": 2
  },
  {
-  "number": "1020-Y60R"
+  "number": "1020-Y60R",
+  "value": "#F4C4A9",
+  "page": 58,
+  "position": 2
  },
  {
-  "number": "1030-Y60R"
+  "number": "1030-Y60R",
+  "value": "#FBB794",
+  "page": 58,
+  "position": 3
  },
  {
-  "number": "1040-Y60R"
+  "number": "1040-Y60R",
+  "value": "#FEA981",
+  "page": 58,
+  "position": 4
  },
  {
-  "number": "1050-Y60R"
+  "number": "1050-Y60R",
+  "value": "#F89466",
+  "page": 59,
+  "position": 4
  },
  {
-  "number": "1060-Y60R"
+  "number": "1060-Y60R",
+  "value": "#F58351",
+  "page": 59,
+  "position": 5
  },
  {
-  "number": "1070-Y60R"
+  "number": "1070-Y60R",
+  "value": "#F27333",
+  "page": 60,
+  "position": 5
  },
  {
-  "number": "1080-Y60R"
+  "number": "1080-Y60R",
+  "value": "#E46000",
+  "page": 60,
+  "position": 6
  },
  {
-  "number": "1505-Y60R"
+  "number": "1505-Y60R",
+  "value": "#E0D3C8",
+  "page": 55,
+  "position": 7
  },
  {
-  "number": "1510-Y60R"
+  "number": "1510-Y60R",
+  "value": "#E4CBBA",
+  "page": 55,
+  "position": 8
  },
  {
-  "number": "1515-Y60R"
+  "number": "1515-Y60R",
+  "value": "#E9C3AD",
+  "page": 57,
+  "position": 3
  },
  {
-  "number": "2005-Y60R"
+  "number": "2005-Y60R",
+  "value": "#D2C6BC",
+  "page": 55,
+  "position": 9
  },
  {
-  "number": "2010-Y60R"
+  "number": "2010-Y60R",
+  "value": "#D6BDAC",
+  "page": 55,
+  "position": 10
  },
  {
-  "number": "2020-Y60R"
+  "number": "2020-Y60R",
+  "value": "#D8AC93",
+  "page": 57,
+  "position": 4
  },
  {
-  "number": "2030-Y60R"
+  "number": "2030-Y60R",
+  "value": "#E19F7F",
+  "page": 57,
+  "position": 5
  },
  {
-  "number": "2040-Y60R"
+  "number": "2040-Y60R",
+  "value": "#E08D66",
+  "page": 58,
+  "position": 5
  },
  {
-  "number": "2050-Y60R"
+  "number": "2050-Y60R",
+  "value": "#DC7D53",
+  "page": 59,
+  "position": 6
  },
  {
-  "number": "2060-Y60R"
+  "number": "2060-Y60R",
+  "value": "#D76B38",
+  "page": 59,
+  "position": 7
  },
  {
-  "number": "2070-Y60R"
+  "number": "2070-Y60R",
+  "value": "#CB560F",
+  "page": 60,
+  "position": 7
  },
  {
-  "number": "2075-Y60R"
+  "number": "2075-Y60R",
+  "value": "#CE5203",
+  "page": 60,
+  "position": 8
  },
  {
-  "number": "2570-Y60R"
+  "number": "2570-Y60R",
+  "value": "#BE4C00",
+  "page": 60,
+  "position": 9
  },
  {
-  "number": "3010-Y60R"
+  "number": "3010-Y60R",
+  "value": "#BEA494",
+  "page": 56,
+  "position": 5
  },
  {
-  "number": "3020-Y60R"
+  "number": "3020-Y60R",
+  "value": "#C2967F",
+  "page": 56,
+  "position": 6
  },
  {
-  "number": "3030-Y60R"
+  "number": "3030-Y60R",
+  "value": "#C6886B",
+  "page": 57,
+  "position": 6
  },
  {
-  "number": "3040-Y60R"
+  "number": "3040-Y60R",
+  "value": "#C67752",
+  "page": 58,
+  "position": 6
  },
  {
-  "number": "3050-Y60R"
+  "number": "3050-Y60R",
+  "value": "#BB633C",
+  "page": 58,
+  "position": 7
  },
  {
-  "number": "3060-Y60R"
+  "number": "3060-Y60R",
+  "value": "#B9551F",
+  "page": 59,
+  "position": 8
  },
  {
-  "number": "3560-Y60R"
+  "number": "3560-Y60R",
+  "value": "#A64613",
+  "page": 59,
+  "position": 9
  },
  {
-  "number": "4020-Y60R"
+  "number": "4020-Y60R",
+  "value": "#AC7E68",
+  "page": 56,
+  "position": 7
  },
  {
-  "number": "4030-Y60R"
+  "number": "4030-Y60R",
+  "value": "#AA6C51",
+  "page": 57,
+  "position": 7
  },
  {
-  "number": "4040-Y60R"
+  "number": "4040-Y60R",
+  "value": "#A85E3A",
+  "page": 58,
+  "position": 8
  },
  {
-  "number": "4050-Y60R"
+  "number": "4050-Y60R",
+  "value": "#A04B1F",
+  "page": 58,
+  "position": 9
  },
  {
-  "number": "4550-Y60R"
+  "number": "4550-Y60R",
+  "value": "#903F0C",
+  "page": 58,
+  "position": 10
  },
  {
-  "number": "5020-Y60R"
+  "number": "5020-Y60R",
+  "value": "#946854",
+  "page": 56,
+  "position": 8
  },
  {
-  "number": "5030-Y60R"
+  "number": "5030-Y60R",
+  "value": "#8F5339",
+  "page": 57,
+  "position": 8
  },
  {
-  "number": "5040-Y60R"
+  "number": "5040-Y60R",
+  "value": "#873F18",
+  "page": 57,
+  "position": 9
  },
  {
-  "number": "6020-Y60R"
+  "number": "6020-Y60R",
+  "value": "#7A4E39",
+  "page": 56,
+  "position": 9
  },
  {
-  "number": "6030-Y60R"
+  "number": "6030-Y60R",
+  "value": "#733D22",
+  "page": 57,
+  "position": 10
  },
  {
-  "number": "7020-Y60R"
+  "number": "7020-Y60R",
+  "value": "#62361D",
+  "page": 56,
+  "position": 10
  },
  {
-  "number": "0505-Y70R"
+  "number": "0505-Y70R",
+  "value": "#FEF0E8",
+  "page": 61,
+  "position": 1
  },
  {
-  "number": "0510-Y70R"
+  "number": "0510-Y70R",
+  "value": "#FFE3D2",
+  "page": 61,
+  "position": 2
  },
  {
-  "number": "0515-Y70R"
+  "number": "0515-Y70R",
+  "value": "#FFDBCB",
+  "page": 62,
+  "position": 1
  },
  {
-  "number": "0520-Y70R"
+  "number": "0520-Y70R",
+  "value": "#FFD0BB",
+  "page": 63,
+  "position": 1
  },
  {
-  "number": "0530-Y70R"
+  "number": "0530-Y70R",
+  "value": "#FFBDA4",
+  "page": 64,
+  "position": 1
  },
  {
-  "number": "0540-Y70R"
+  "number": "0540-Y70R",
+  "value": "#FFA98C",
+  "page": 64,
+  "position": 2
  },
  {
-  "number": "0550-Y70R"
+  "number": "0550-Y70R",
+  "value": "#FF9C7A",
+  "page": 65,
+  "position": 1
  },
  {
-  "number": "0560-Y70R"
+  "number": "0560-Y70R",
+  "value": "#FF8664",
+  "page": 65,
+  "position": 2
  },
  {
-  "number": "0570-Y70R"
+  "number": "0570-Y70R",
+  "value": "#FF724A",
+  "page": 66,
+  "position": 1
  },
  {
-  "number": "0580-Y70R"
+  "number": "0580-Y70R",
+  "value": "#FD5D28",
+  "page": 66,
+  "position": 2
  },
  {
-  "number": "0585-Y70R"
+  "number": "0585-Y70R",
+  "value": "#F65400",
+  "page": 66,
+  "position": 3
  },
  {
-  "number": "0804-Y70R"
+  "number": "0804-Y70R",
+  "value": "#F5EBE6",
+  "page": 61,
+  "position": 3
  },
  {
-  "number": "0907-Y70R"
+  "number": "0907-Y70R",
+  "value": "#F4E0D6",
+  "page": 61,
+  "position": 5
  },
  {
-  "number": "1005-Y70R"
+  "number": "1005-Y70R",
+  "value": "#EBDED6",
+  "page": 61,
+  "position": 4
  },
  {
-  "number": "1010-Y70R"
+  "number": "1010-Y70R",
+  "value": "#F3D5C6",
+  "page": 61,
+  "position": 6
  },
  {
-  "number": "1015-Y70R"
+  "number": "1015-Y70R",
+  "value": "#F5CEBD",
+  "page": 62,
+  "position": 2
  },
  {
-  "number": "1020-Y70R"
+  "number": "1020-Y70R",
+  "value": "#F7C5B0",
+  "page": 63,
+  "position": 2
  },
  {
-  "number": "1030-Y70R"
+  "number": "1030-Y70R",
+  "value": "#FBB59B",
+  "page": 64,
+  "position": 3
  },
  {
-  "number": "1040-Y70R"
+  "number": "1040-Y70R",
+  "value": "#F99F82",
+  "page": 64,
+  "position": 4
  },
  {
-  "number": "1050-Y70R"
+  "number": "1050-Y70R",
+  "value": "#FA8D69",
+  "page": 65,
+  "position": 3
  },
  {
-  "number": "1060-Y70R"
+  "number": "1060-Y70R",
+  "value": "#F37B57",
+  "page": 66,
+  "position": 4
  },
  {
-  "number": "1070-Y70R"
+  "number": "1070-Y70R",
+  "value": "#EE673D",
+  "page": 66,
+  "position": 5
  },
  {
-  "number": "1080-Y70R"
+  "number": "1080-Y70R",
+  "value": "#E74F0D",
+  "page": 66,
+  "position": 6
  },
  {
-  "number": "1505-Y70R"
+  "number": "1505-Y70R",
+  "value": "#DFD3CC",
+  "page": 61,
+  "position": 7
  },
  {
-  "number": "1510-Y70R"
+  "number": "1510-Y70R",
+  "value": "#E3C9BC",
+  "page": 61,
+  "position": 8
  },
  {
-  "number": "1515-Y70R"
+  "number": "1515-Y70R",
+  "value": "#E6C0AF",
+  "page": 62,
+  "position": 3
  },
  {
-  "number": "2005-Y70R"
+  "number": "2005-Y70R",
+  "value": "#D2C4BC",
+  "page": 61,
+  "position": 9
  },
  {
-  "number": "2010-Y70R"
+  "number": "2010-Y70R",
+  "value": "#D9BEB1",
+  "page": 61,
+  "position": 10
  },
  {
-  "number": "2020-Y70R"
+  "number": "2020-Y70R",
+  "value": "#DCAC99",
+  "page": 63,
+  "position": 3
  },
  {
-  "number": "2030-Y70R"
+  "number": "2030-Y70R",
+  "value": "#E19B84",
+  "page": 64,
+  "position": 5
  },
  {
-  "number": "2040-Y70R"
+  "number": "2040-Y70R",
+  "value": "#DB876B",
+  "page": 65,
+  "position": 4
  },
  {
-  "number": "2050-Y70R"
+  "number": "2050-Y70R",
+  "value": "#D87354",
+  "page": 65,
+  "position": 5
  },
  {
-  "number": "2060-Y70R"
+  "number": "2060-Y70R",
+  "value": "#D26140",
+  "page": 65,
+  "position": 6
  },
  {
-  "number": "2070-Y70R"
+  "number": "2070-Y70R",
+  "value": "#CA4B21",
+  "page": 66,
+  "position": 7
  },
  {
-  "number": "2075-Y70R"
+  "number": "2075-Y70R",
+  "value": "#C34100",
+  "page": 66,
+  "position": 8
  },
  {
-  "number": "2570-Y70R"
+  "number": "2570-Y70R",
+  "value": "#B43C0B",
+  "page": 66,
+  "position": 9
  },
  {
-  "number": "3010-Y70R"
+  "number": "3010-Y70R",
+  "value": "#BDA498",
+  "page": 62,
+  "position": 5
  },
  {
-  "number": "3020-Y70R"
+  "number": "3020-Y70R",
+  "value": "#C59785",
+  "page": 63,
+  "position": 4
  },
  {
-  "number": "3030-Y70R"
+  "number": "3030-Y70R",
+  "value": "#C5826C",
+  "page": 64,
+  "position": 6
  },
  {
-  "number": "3040-Y70R"
+  "number": "3040-Y70R",
+  "value": "#C17157",
+  "page": 64,
+  "position": 7
  },
  {
-  "number": "3050-Y70R"
+  "number": "3050-Y70R",
+  "value": "#B9593F",
+  "page": 65,
+  "position": 7
  },
  {
-  "number": "3060-Y70R"
+  "number": "3060-Y70R",
+  "value": "#AF4623",
+  "page": 65,
+  "position": 8
  },
  {
-  "number": "3560-Y70R"
+  "number": "3560-Y70R",
+  "value": "#A13811",
+  "page": 66,
+  "position": 10
  },
  {
-  "number": "4010-Y70R"
+  "number": "4010-Y70R",
+  "value": "#A98E84",
+  "page": 62,
+  "position": 6
  },
  {
-  "number": "4020-Y70R"
+  "number": "4020-Y70R",
+  "value": "#AB7C6C",
+  "page": 63,
+  "position": 5
  },
  {
-  "number": "4030-Y70R"
+  "number": "4030-Y70R",
+  "value": "#AA6955",
+  "page": 64,
+  "position": 8
  },
  {
-  "number": "4040-Y70R"
+  "number": "4040-Y70R",
+  "value": "#A2563E",
+  "page": 64,
+  "position": 9
  },
  {
-  "number": "4050-Y70R"
+  "number": "4050-Y70R",
+  "value": "#9A3F1F",
+  "page": 65,
+  "position": 9
  },
  {
-  "number": "4550-Y70R"
+  "number": "4550-Y70R",
+  "value": "#8C3610",
+  "page": 65,
+  "position": 10
  },
  {
   "number": "5010-Y70R"
