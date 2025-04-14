@@ -363,18 +363,18 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     Map<int, List<dynamic>> colorsByPage = {};
     for (var color in categoryColors) {
       try {
-        int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
+        int page = int.tryParse(color['page']?.toString() ?? '300') ?? 300;
         if (!colorsByPage.containsKey(page)) {
           colorsByPage[page] = [];
         }
         colorsByPage[page]!.add(color);
       } catch (e) {
         print('Error processing page number: $e');
-        // Add to page 206 if there's an error
-        if (!colorsByPage.containsKey(206)) {
-          colorsByPage[206] = [];
+        // Add to page 300 if there's an error
+        if (!colorsByPage.containsKey(300)) {
+          colorsByPage[300] = [];
         }
-        colorsByPage[206]!.add(color);
+        colorsByPage[300]!.add(color);
       }
     }
 
