@@ -68,85 +68,200 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   void _showColorPalette(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        if (_favoriteColors.isEmpty) {
+        try {
+          if (_favoriteColors.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'No favorite colors yet. Mark some colors as favorites to see them here!',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          // Get valid color sets that have favorite colors
+          final validColorSets = _colorsData.entries.where((entry) {
+            try {
+              final colorSet = entry.value as List?;
+              if (colorSet == null || colorSet.isEmpty) return false;
+
+              return colorSet.any((color) {
+                if (color is Map<String, dynamic>) {
+                  final number = color['number']?.toString();
+                  return number != null && _favoriteColors.contains(number);
+                }
+                return false;
+              });
+            } catch (e) {
+              debugPrint('Error processing color set ${entry.key}: $e');
+              return false;
+            }
+          }).toList();
+
+          if (validColorSets.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'No favorite colors found in any color set',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          return DefaultTabController(
+            length: validColorSets.length,
+            child: Container(
+              padding: const EdgeInsets.all(16.0),
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Select Color',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TabBar(
+                    isScrollable: true,
+                    tabs: validColorSets
+                        .map((entry) => Tab(text: entry.key))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: TabBarView(
+                      children: validColorSets.map((entry) {
+                        try {
+                          final colorSet = entry.value as List;
+                          final favoriteColorsInSet = colorSet.where((color) {
+                            try {
+                              if (color is Map<String, dynamic>) {
+                                final number = color['number']?.toString();
+                                return number != null &&
+                                    _favoriteColors.contains(number);
+                              }
+                              return false;
+                            } catch (e) {
+                              debugPrint('Error processing color: $e');
+                              return false;
+                            }
+                          }).toList();
+
+                          if (favoriteColorsInSet.isEmpty) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'No favorite colors found in this set',
+                                  style: TextStyle(color: Colors.grey),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return SingleChildScrollView(
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 5,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                              itemCount: favoriteColorsInSet.length,
+                              itemBuilder: (context, index) {
+                                try {
+                                  if (index >= favoriteColorsInSet.length) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final color = favoriteColorsInSet[index];
+                                  if (color is! Map<String, dynamic>) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final hexColor = color['value']?.toString();
+                                  if (hexColor == null) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final colorObj = hexToColor(hexColor);
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedColor = colorObj;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: colorObj,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: selectedColor == colorObj
+                                              ? Colors.white
+                                              : Colors.grey,
+                                          width:
+                                              selectedColor == colorObj ? 3 : 1,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  debugPrint(
+                                      'Error building color item at index $index: $e');
+                                  return const SizedBox.shrink();
+                                }
+                              },
+                            ),
+                          );
+                        } catch (e) {
+                          debugPrint(
+                              'Error processing color set ${entry.key}: $e');
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                'Error loading colors from this set',
+                                style: TextStyle(color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } catch (e) {
+          debugPrint('Error in color palette: $e');
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16.0),
               child: Text(
-                'No favorite colors yet. Mark some colors as favorites to see them here!',
+                'Something went wrong while loading the color palette. Please try again.',
                 style: TextStyle(color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
             ),
           );
         }
-
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Select Color',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: _favoriteColors.length,
-                itemBuilder: (context, index) {
-                  final colorNumber = _favoriteColors.elementAt(index);
-                  String? hexColor;
-
-                  // Search through all color sets in the JSON
-                  for (var colorSet in _colorsData.values) {
-                    for (var color in colorSet) {
-                      if (color['number'] == colorNumber) {
-                        hexColor = color['value'];
-                        break;
-                      }
-                    }
-                    if (hexColor != null) break;
-                  }
-
-                  if (hexColor == null) return const SizedBox.shrink();
-
-                  final color = hexToColor(hexColor);
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedColor = color;
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selectedColor == color
-                              ? Colors.white
-                              : Colors.grey,
-                          width: selectedColor == color ? 3 : 1,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
       },
     );
   }
@@ -204,89 +319,98 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Center(
-              child: Container(
-                width: width,
-                height: height,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: GestureDetector(
-                    onPanStart: (details) {
-                      setState(() {
-                        drawingPoints.add(
-                          DrawingPoint(
-                            offset: details.localPosition,
-                            paint: Paint()
-                              ..color = selectedColor
-                              ..isAntiAlias = true
-                              ..strokeWidth = strokeWidth
-                              ..strokeCap = StrokeCap.round,
-                          ),
-                        );
-                      });
-                    },
-                    onPanUpdate: (details) {
-                      setState(() {
-                        drawingPoints.add(
-                          DrawingPoint(
-                            offset: details.localPosition,
-                            paint: Paint()
-                              ..color = selectedColor
-                              ..isAntiAlias = true
-                              ..strokeWidth = strokeWidth
-                              ..strokeCap = StrokeCap.round,
-                          ),
-                        );
-                      });
-                    },
-                    onPanEnd: (details) {
-                      setState(() {
-                        drawingPoints.add(null);
-                      });
-                    },
-                    child: CustomPaint(
-                      painter: _DrawingPainter(
-                        drawingPoints: drawingPoints,
-                        backgroundImage: renderedImage,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: width,
+              maxHeight: MediaQuery.of(context).size.height -
+                  kToolbarHeight -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
                       ),
-                      size: Size(width, height),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: GestureDetector(
+                      onPanStart: (details) {
+                        setState(() {
+                          drawingPoints.add(
+                            DrawingPoint(
+                              offset: details.localPosition,
+                              paint: Paint()
+                                ..color = selectedColor
+                                ..isAntiAlias = true
+                                ..strokeWidth = strokeWidth
+                                ..strokeCap = StrokeCap.round,
+                            ),
+                          );
+                        });
+                      },
+                      onPanUpdate: (details) {
+                        setState(() {
+                          drawingPoints.add(
+                            DrawingPoint(
+                              offset: details.localPosition,
+                              paint: Paint()
+                                ..color = selectedColor
+                                ..isAntiAlias = true
+                                ..strokeWidth = strokeWidth
+                                ..strokeCap = StrokeCap.round,
+                            ),
+                          );
+                        });
+                      },
+                      onPanEnd: (details) {
+                        setState(() {
+                          drawingPoints.add(null);
+                        });
+                      },
+                      child: CustomPaint(
+                        painter: _DrawingPainter(
+                          drawingPoints: drawingPoints,
+                          backgroundImage: renderedImage,
+                        ),
+                        size: Size(width, height),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Slider(
+                    value: strokeWidth,
+                    min: 1,
+                    max: 20,
+                    onChanged: (value) {
+                      setState(() {
+                        strokeWidth = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Slider(
-                value: strokeWidth,
-                min: 1,
-                max: 20,
-                onChanged: (value) {
-                  setState(() {
-                    strokeWidth = value;
-                  });
-                },
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

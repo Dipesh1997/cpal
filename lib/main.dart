@@ -8,6 +8,7 @@ import 'favorites_page.dart';
 import 'screens/color_picker_page.dart';
 import 'screens/drawing_canvas_page.dart';
 import 'providers/color_provider.dart';
+import 'wood.dart';
 
 void main() {
   runApp(const MyApp());
@@ -112,6 +113,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
         colors = Map<String, List<dynamic>>.from(json.decode(jsonString));
+        // Add wood colors to the colors map
+        colors['wood'] = WoodColors.colors;
         // Initialize filteredColors with all colors
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) => MapEntry(
@@ -209,324 +212,491 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   }
 
   Widget _buildColorGrid(String category) {
-    final categoryColors = filteredColors[category] ?? [];
+    try {
+      final categoryColors = filteredColors[category] ?? [];
 
-    // If no colors, return empty container
-    if (categoryColors.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    // Group colors by page number
-    Map<int, List<dynamic>> colorsByPage = {};
-    for (var color in categoryColors) {
-      try {
-        int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
-        if (!colorsByPage.containsKey(page)) {
-          colorsByPage[page] = [];
-        }
-        colorsByPage[page]!.add(color);
-      } catch (e) {
-        print('Error processing page number: $e');
-        // Add to page 206 if there's an error
-        if (!colorsByPage.containsKey(206)) {
-          colorsByPage[206] = [];
-        }
-        colorsByPage[206]!.add(color);
-      }
-    }
-
-    // Sort pages by page number
-    List<int> sortedPages = colorsByPage.keys.toList()..sort();
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: sortedPages.length,
-      itemBuilder: (context, pageIndex) {
-        final pageNumber = sortedPages[pageIndex];
-        final pageColors = colorsByPage[pageNumber]!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Page $pageNumber',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      // If no colors, return empty container
+      if (categoryColors.isEmpty) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'No colors found in this category',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
             ),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: pageColors.length,
-              itemBuilder: (context, index) {
-                var color = pageColors[index];
-                return Card(
-                  elevation: 4,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ColorDetailPage(
-                            color: {
-                              ...color,
-                              'tab': category,
-                            },
-                            onFavoriteToggle: toggleFavorite,
-                            isFavorite: Provider.of<ColorProvider>(context,
-                                    listen: false)
-                                .isFavorite(color['number']),
-                            allColors:
-                                colors, // Pass the complete colors list instead of filtered
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: hexToColor(color['value']),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            color['number'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+          ),
+        );
+      }
+
+      // Group colors by page number
+      Map<int, List<dynamic>> colorsByPage = {};
+      for (var color in categoryColors) {
+        try {
+          int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
+          if (!colorsByPage.containsKey(page)) {
+            colorsByPage[page] = [];
+          }
+          colorsByPage[page]!.add(color);
+        } catch (e) {
+          debugPrint('Error processing page number: $e');
+          // Add to page 206 if there's an error
+          if (!colorsByPage.containsKey(206)) {
+            colorsByPage[206] = [];
+          }
+          colorsByPage[206]!.add(color);
+        }
+      }
+
+      // Sort pages by page number
+      List<int> sortedPages = colorsByPage.keys.toList()..sort();
+
+      return SingleChildScrollView(
+        child: ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(8),
+          itemCount: sortedPages.length,
+          itemBuilder: (context, pageIndex) {
+            try {
+              if (pageIndex >= sortedPages.length) {
+                return const SizedBox.shrink();
+              }
+
+              final pageNumber = sortedPages[pageIndex];
+              final pageColors = colorsByPage[pageNumber]!;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'Page $pageNumber',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: pageColors.length,
+                    itemBuilder: (context, index) {
+                      try {
+                        if (index >= pageColors.length) {
+                          return const SizedBox.shrink();
+                        }
+
+                        var color = pageColors[index];
+                        return Card(
+                          elevation: 4,
+                          child: InkWell(
+                            onTap: () {
+                              try {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ColorDetailPage(
+                                      color: {
+                                        ...color,
+                                        'tab': category,
+                                      },
+                                      onFavoriteToggle: toggleFavorite,
+                                      isFavorite: Provider.of<ColorProvider>(
+                                              context,
+                                              listen: false)
+                                          .isFavorite(color['number']),
+                                      allColors: colors,
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                debugPrint(
+                                    'Error navigating to color detail: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Error loading color details'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: hexToColor(color['value']),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    color['number'],
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        debugPrint('Error building color card: $e');
+                        return const SizedBox.shrink();
+                      }
+                    },
+                  ),
+                ],
+              );
+            } catch (e) {
+              debugPrint('Error building page $pageIndex: $e');
+              return const SizedBox.shrink();
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error in color grid: $e');
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Error loading colors. Please try again.',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildNCSColorGrid(String category) {
-    List<dynamic> categoryColors = filteredColors[category] ?? [];
-    if (searchQuery.isNotEmpty) {
-      categoryColors = categoryColors.where((color) {
+    try {
+      List<dynamic> categoryColors = filteredColors[category] ?? [];
+      if (searchQuery.isNotEmpty) {
         try {
-          // Safely get the number and value, providing defaults if null
-          String number = (color['number'] ?? '').toString();
-          String value = (color['value'] ?? '').toString();
+          categoryColors = categoryColors.where((color) {
+            try {
+              // Safely get the number and value, providing defaults if null
+              String number = (color['number'] ?? '').toString();
+              String value = (color['value'] ?? '').toString();
 
-          // Normalize both the search query and the color number
-          String normalizedQuery =
-              searchQuery.replaceAll(RegExp(r'[^a-z0-9]'), '');
-          String normalizedNumber =
-              number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-          String normalizedValue = value.toLowerCase();
+              // Normalize both the search query and the color number
+              String normalizedQuery =
+                  searchQuery.replaceAll(RegExp(r'[^a-z0-9]'), '');
+              String normalizedNumber =
+                  number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+              String normalizedValue = value.toLowerCase();
 
-          return normalizedNumber.contains(normalizedQuery) ||
-              normalizedValue.contains(searchQuery) ||
-              // Also check original number for exact matches with spaces/special chars
-              number.toLowerCase().contains(searchQuery);
+              return normalizedNumber.contains(normalizedQuery) ||
+                  normalizedValue.contains(searchQuery) ||
+                  // Also check original number for exact matches with spaces/special chars
+                  number.toLowerCase().contains(searchQuery);
+            } catch (e) {
+              debugPrint('Error filtering NCS color: $e');
+              return false;
+            }
+          }).toList();
         } catch (e) {
-          print('Error filtering NCS color: $e');
-          return false;
+          debugPrint('Error filtering NCS colors: $e');
+          categoryColors = [];
         }
-      }).toList();
-    }
-
-    // If no colors, return empty container
-    if (categoryColors.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    // Group colors by page number
-    Map<int, List<dynamic>> colorsByPage = {};
-    for (var color in categoryColors) {
-      try {
-        int page = int.tryParse(color['page']?.toString() ?? '300') ?? 300;
-        if (!colorsByPage.containsKey(page)) {
-          colorsByPage[page] = [];
-        }
-        colorsByPage[page]!.add(color);
-      } catch (e) {
-        print('Error processing page number: $e');
-        // Add to page 300 if there's an error
-        if (!colorsByPage.containsKey(300)) {
-          colorsByPage[300] = [];
-        }
-        colorsByPage[300]!.add(color);
       }
-    }
 
-    // Sort pages by page number
-    List<int> sortedPages = colorsByPage.keys.toList()..sort();
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: sortedPages.length,
-      itemBuilder: (context, pageIndex) {
-        final pageNumber = sortedPages[pageIndex];
-        final pageColors = colorsByPage[pageNumber]!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Page $pageNumber',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      // If no colors, return empty container
+      if (categoryColors.isEmpty) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'No NCS colors found matching your search',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
             ),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: pageColors.length,
-              itemBuilder: (context, index) {
-                var color = pageColors[index];
-                return Card(
-                  elevation: 4,
-                  child: InkWell(
-                    onTap: () {
-                      if (color['value'] == null ||
-                          color['page'] == null ||
-                          color['position'] == null) {
-                        // Show a snackbar for coming soon message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Coming Soon!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ColorDetailPage(
-                            color: {
-                              ...color,
-                              'tab': category,
-                            },
-                            onFavoriteToggle: toggleFavorite,
-                            isFavorite: Provider.of<ColorProvider>(context,
-                                    listen: false)
-                                .isFavorite(color['number']),
-                            allColors: filteredColors,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: color['value'] != null
-                                    ? hexToColor(color['value'])
-                                    : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            color['number'] ?? 'Coming Soon',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          if (color['value'] == null ||
-                              color['page'] == null ||
-                              color['position'] == null)
-                            const Text(
-                              'Coming Soon',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                        ],
+          ),
+        );
+      }
+
+      // Group colors by page number
+      Map<int, List<dynamic>> colorsByPage = {};
+      for (var color in categoryColors) {
+        try {
+          int page = int.tryParse(color['page']?.toString() ?? '300') ?? 300;
+          if (!colorsByPage.containsKey(page)) {
+            colorsByPage[page] = [];
+          }
+          colorsByPage[page]!.add(color);
+        } catch (e) {
+          debugPrint('Error processing page number: $e');
+          // Add to page 300 if there's an error
+          if (!colorsByPage.containsKey(300)) {
+            colorsByPage[300] = [];
+          }
+          colorsByPage[300]!.add(color);
+        }
+      }
+
+      // Sort pages by page number
+      List<int> sortedPages = colorsByPage.keys.toList()..sort();
+
+      return SingleChildScrollView(
+        child: ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(8),
+          itemCount: sortedPages.length,
+          itemBuilder: (context, pageIndex) {
+            try {
+              if (pageIndex >= sortedPages.length) {
+                return const SizedBox.shrink();
+              }
+
+              final pageNumber = sortedPages[pageIndex];
+              final pageColors = colorsByPage[pageNumber]!;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'Page $pageNumber',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: pageColors.length,
+                    itemBuilder: (context, index) {
+                      try {
+                        if (index >= pageColors.length) {
+                          return const SizedBox.shrink();
+                        }
+
+                        var color = pageColors[index];
+                        return Card(
+                          elevation: 4,
+                          child: InkWell(
+                            onTap: () {
+                              try {
+                                if (color['value'] == null ||
+                                    color['page'] == null ||
+                                    color['position'] == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Color details not available yet'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ColorDetailPage(
+                                      color: {
+                                        ...color,
+                                        'tab': category,
+                                      },
+                                      onFavoriteToggle: toggleFavorite,
+                                      isFavorite: Provider.of<ColorProvider>(
+                                              context,
+                                              listen: false)
+                                          .isFavorite(color['number']),
+                                      allColors: filteredColors,
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                debugPrint(
+                                    'Error navigating to color detail: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Error loading color details'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: color['value'] != null
+                                            ? hexToColor(color['value'])
+                                            : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    color['number'] ?? 'Coming Soon',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  if (color['value'] == null ||
+                                      color['page'] == null ||
+                                      color['position'] == null)
+                                    const Text(
+                                      'Coming Soon',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        debugPrint('Error building color card: $e');
+                        return const SizedBox.shrink();
+                      }
+                    },
+                  ),
+                ],
+              );
+            } catch (e) {
+              debugPrint('Error building page $pageIndex: $e');
+              return const SizedBox.shrink();
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error in NCS color grid: $e');
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Error loading NCS colors. Please try again.',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildAsianTabView() {
-    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV'];
-    List<String> visibleTabs = [];
+    try {
+      List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV', 'wood'];
+      List<String> visibleTabs = [];
 
-    // Only show tabs that have search results
-    for (var tab in asianTabs) {
-      if ((filteredColors[tab] ?? []).isNotEmpty) {
-        visibleTabs.add(tab);
+      // Only show tabs that have search results
+      for (var tab in asianTabs) {
+        try {
+          if ((filteredColors[tab] ?? []).isNotEmpty) {
+            visibleTabs.add(tab);
+          }
+        } catch (e) {
+          debugPrint('Error processing tab $tab: $e');
+          continue;
+        }
       }
-    }
 
-    // If no visible tabs, return empty container
-    if (visibleTabs.isEmpty) {
-      return const Center(child: Text('No results found'));
-    }
-
-    return DefaultTabController(
-      length: visibleTabs.length,
-      child: Column(
-        children: [
-          TabBar(
-            isScrollable: true,
-            tabs:
-                visibleTabs.map((tab) => Tab(text: tab.toUpperCase())).toList(),
-          ),
-          Expanded(
-            child: TabBarView(
-              children: visibleTabs.map((tab) => _buildColorGrid(tab)).toList(),
+      // If no visible tabs, return empty container
+      if (visibleTabs.isEmpty) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'No results found in Asian color sets',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
             ),
           ),
-        ],
-      ),
-    );
+        );
+      }
+
+      return DefaultTabController(
+        length: visibleTabs.length,
+        child: Column(
+          children: [
+            TabBar(
+              isScrollable: true,
+              tabs: visibleTabs
+                  .map((tab) => Tab(text: tab.toUpperCase()))
+                  .toList(),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: visibleTabs.map((tab) {
+                  try {
+                    return _buildColorGrid(tab);
+                  } catch (e) {
+                    debugPrint('Error building color grid for tab $tab: $e');
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                          'Error loading colors for this category',
+                          style: TextStyle(color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error in Asian tab view: $e');
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Something went wrong while loading Asian colors. Please try again.',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
   }
 
   @override
