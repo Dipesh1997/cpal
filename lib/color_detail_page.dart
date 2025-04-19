@@ -39,6 +39,13 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     _findSimilarColors();
   }
 
+  void _handleFavoriteToggle() {
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+    widget.onFavoriteToggle(widget.color['number']);
+  }
+
   Color hexToColor(String hexString) {
     if (_colorCache.containsKey(hexString)) {
       return _colorCache[hexString]!;
@@ -91,7 +98,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 widget.color['value'],
                 color['value'],
               );
-              double similarityPercentage = _calculateSimilarityPercentage(distance);
+              double similarityPercentage =
+                  _calculateSimilarityPercentage(distance);
               allSimilarColors.add({
                 ...color,
                 'similarity': distance,
@@ -111,7 +119,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
               widget.color['value'],
               color['value'],
             );
-            double similarityPercentage = _calculateSimilarityPercentage(distance);
+            double similarityPercentage =
+                _calculateSimilarityPercentage(distance);
             allSimilarColors.add({
               ...color,
               'similarity': distance,
@@ -124,7 +133,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     }
 
     // Sort by similarity and take top 5
-    allSimilarColors.sort((a, b) => (a['similarity'] as double).compareTo(b['similarity'] as double));
+    allSimilarColors.sort((a, b) =>
+        (a['similarity'] as double).compareTo(b['similarity'] as double));
     setState(() {
       _similarColors = allSimilarColors.take(5).toList();
     });
@@ -139,7 +149,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
 
   Widget _buildColorInfo() {
     List<Widget> details = [];
-    
+
     if (widget.color['tab'] == 'ncs') {
       details = [
         Text(
@@ -196,7 +206,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
         ),
       ];
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: details,
@@ -204,8 +214,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   }
 
   Widget _buildSimilarColorCard(Map<String, dynamic> color) {
-    String displayText = color['tab'] == 'ncs' 
-        ? 'Position: ${color['position']}' 
+    String displayText = color['tab'] == 'ncs'
+        ? 'Position: ${color['position']}'
         : color['name'];
 
     return Card(
@@ -263,10 +273,10 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                   Text(
                     '${color['similarityPercentage'].toStringAsFixed(1)}% Match',
                     style: TextStyle(
-                      color: color['similarityPercentage'] >= 90 
-                          ? Colors.green 
-                          : color['similarityPercentage'] >= 75 
-                              ? Colors.orange 
+                      color: color['similarityPercentage'] >= 90
+                          ? Colors.green
+                          : color['similarityPercentage'] >= 75
+                              ? Colors.orange
                               : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
@@ -304,14 +314,10 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
           ),
           IconButton(
             icon: Icon(
-              widget.isFavorite
-                  ? Icons.star
-                  : Icons.star_border,
+              isFavorite ? Icons.star : Icons.star_border,
               color: Colors.yellow,
             ),
-            onPressed: () {
-              widget.onFavoriteToggle(widget.color['number']);
-            },
+            onPressed: _handleFavoriteToggle,
           ),
         ],
       ),
@@ -346,7 +352,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                         );
                       },
                       backgroundColor: Colors.white.withOpacity(0.8),
-                      child: const Icon(Icons.fullscreen, color: Colors.black87),
+                      child:
+                          const Icon(Icons.fullscreen, color: Colors.black87),
                     ),
                   ),
                 ],
