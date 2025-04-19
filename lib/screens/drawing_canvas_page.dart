@@ -2,9 +2,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:provider/provider.dart';
-import '../favorites_page.dart';
-import '../providers/color_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class DrawingPoint {
   final Offset offset;
@@ -27,23 +26,129 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   File? backgroundImage;
   ui.Image? renderedImage;
   final ImagePicker _picker = ImagePicker();
-  late ColorProvider colorProvider;
-
-  final List<Color> defaultColors = [
-    Colors.black,
-    Colors.red,
-    Colors.green,
-    Colors.blue,
-    Colors.yellow,
-  ];
+  Map<String, dynamic> _colorsData = {};
+  Set<String> _favoriteColors = {};
 
   @override
   void initState() {
     super.initState();
-    // Move provider initialization to after the widget is mounted
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      colorProvider = Provider.of<ColorProvider>(context, listen: false);
+    _loadColorsAndFavorites();
+  }
+
+  Future<void> _loadColorsAndFavorites() async {
+    // Load colors from colors.json
+    final colorsJson =
+        await DefaultAssetBundle.of(context).loadString('assets/colors.json');
+    setState(() {
+      _colorsData = json.decode(colorsJson);
     });
+
+    // Load favorites from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final favorites = prefs.getStringList('favorites') ?? [];
+    setState(() {
+      _favoriteColors = favorites.toSet();
+    });
+  }
+
+  Color hexToColor(String hexString) {
+    try {
+      final hex = hexString.replaceAll('#', '');
+      String fullHex = hex;
+      if (hex.length == 3) {
+        fullHex = hex.split('').map((e) => '$e$e').join('');
+      }
+      fullHex = fullHex.padLeft(6, '0');
+      return Color(int.parse('FF$fullHex', radix: 16));
+    } catch (e) {
+      return Colors.grey;
+    }
+  }
+
+  void _showColorPalette(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        if (_favoriteColors.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'No favorite colors yet. Mark some colors as favorites to see them here!',
+                style: TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Color',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: _favoriteColors.length,
+                itemBuilder: (context, index) {
+                  final colorNumber = _favoriteColors.elementAt(index);
+                  String? hexColor;
+
+                  // Search through all color sets in the JSON
+                  for (var colorSet in _colorsData.values) {
+                    for (var color in colorSet) {
+                      if (color['number'] == colorNumber) {
+                        hexColor = color['value'];
+                        break;
+                      }
+                    }
+                    if (hexColor != null) break;
+                  }
+
+                  if (hexColor == null) return const SizedBox.shrink();
+
+                  final color = hexToColor(hexColor);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedColor = color;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selectedColor == color
+                              ? Colors.white
+                              : Colors.grey,
+                          width: selectedColor == color ? 3 : 1,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _pickImage() async {
@@ -64,99 +169,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     }
   }
 
-  Color hexToColor(String hexString) {
-    try {
-      // Remove any '#' prefix
-      final hex = hexString.replaceAll('#', '');
-      
-      // Handle both 6-digit and 3-digit hex codes
-      String fullHex = hex;
-      if (hex.length == 3) {
-        fullHex = hex.split('').map((e) => '$e$e').join('');
-      }
-      
-      // Ensure 6 characters and add alpha channel
-      fullHex = fullHex.padLeft(6, '0');
-      return Color(int.parse('FF$fullHex', radix: 16));
-    } catch (e) {
-      return Colors.grey; // Fallback color if parsing fails
-    }
-  }
-
-  Widget _buildColorButton(Color color) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedColor = color;
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: selectedColor == color ? Colors.blue : Colors.grey,
-            width: selectedColor == color ? 3 : 1,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFavoriteColorButton(String colorValue) {
-    final color = hexToColor(colorValue);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedColor = color;
-          });
-        },
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selectedColor == color ? Colors.white : Colors.grey,
-              width: selectedColor == color ? 2 : 1,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorRow(Set<String> favoriteColors) {
-    List<Widget> colorButtons = [];
-    int favoritesAdded = 0;
-
-    // Add favorite colors first
-    for (String colorHex in favoriteColors) {
-      if (favoritesAdded < 5) {  // Only show up to 5 colors in the top row
-        colorButtons.add(_buildFavoriteColorButton(colorHex));
-        favoritesAdded++;
-      }
-    }
-
-    // Fill remaining slots with default colors if needed
-    if (favoritesAdded < 5) {
-      for (int i = favoritesAdded; i < 5; i++) {
-        colorButtons.add(_buildColorButton(defaultColors[i]));
-      }
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: colorButtons,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width * 0.8;
@@ -166,6 +178,10 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       appBar: AppBar(
         title: const Text('Drawing Canvas'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.palette),
+            onPressed: () => _showColorPalette(context),
+          ),
           IconButton(
             icon: const Icon(Icons.image),
             onPressed: _pickImage,
@@ -183,7 +199,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () {
-              // TODO: Implement save functionality
               Navigator.pop(context);
             },
           ),
@@ -258,41 +273,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              height: 65,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Consumer<ColorProvider>(
-                    builder: (context, colorProvider, _) {
-                      final favoriteColors = colorProvider.favoriteColorNumbers;
-                      return _buildColorRow(favoriteColors);
-                    },
-                  ),
-                  const SizedBox(height: 5),
-                  Consumer<ColorProvider>(
-                    builder: (context, colorProvider, _) {
-                      final favoriteColors = colorProvider.favoriteColorNumbers;
-                      // Only show the scrollable row if there are more than 5 favorite colors
-                      if (favoriteColors.length <= 5) return const SizedBox.shrink();
-                      
-                      return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: favoriteColors
-                              .skip(5) // Skip the first 5 colors that are shown in the top row
-                              .map((colorHex) => _buildFavoriteColorButton(colorHex))
-                              .toList(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Slider(
@@ -322,28 +302,29 @@ class _DrawingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (backgroundImage != null) {
-      // Calculate scaling to fit the image within the canvas while maintaining aspect ratio
-      final double imageAspectRatio = backgroundImage!.width / backgroundImage!.height;
+      final double imageAspectRatio =
+          backgroundImage!.width / backgroundImage!.height;
       final double canvasAspectRatio = size.width / size.height;
-      
+
       double scaleX = size.width / backgroundImage!.width;
       double scaleY = size.height / backgroundImage!.height;
-      
+
       if (imageAspectRatio > canvasAspectRatio) {
         scaleY = scaleX;
       } else {
         scaleX = scaleY;
       }
-      
+
       final double scaledWidth = backgroundImage!.width * scaleX;
       final double scaledHeight = backgroundImage!.height * scaleY;
-      
+
       final double offsetX = (size.width - scaledWidth) / 2;
       final double offsetY = (size.height - scaledHeight) / 2;
-      
+
       canvas.drawImageRect(
         backgroundImage!,
-        Rect.fromLTWH(0, 0, backgroundImage!.width.toDouble(), backgroundImage!.height.toDouble()),
+        Rect.fromLTWH(0, 0, backgroundImage!.width.toDouble(),
+            backgroundImage!.height.toDouble()),
         Rect.fromLTWH(offsetX, offsetY, scaledWidth, scaledHeight),
         Paint(),
       );

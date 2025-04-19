@@ -86,10 +86,12 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     String currentTab = widget.color['tab'] ?? 'opus'; // Get current tab
     List<Map<String, dynamic>> allSimilarColors = [];
 
-    // If current tab is opus, show colors from light/medium/dark
+    // If current tab is opus or ncs, show colors from light/medium/dark
     // If current tab is light/medium/dark, show colors from opus
-    if (currentTab == 'opus') {
-      // For opus colors, show similar colors from light, medium, and dark tabs
+    if (currentTab == 'opus' ||
+        currentTab == 'ncs' ||
+        widget.color['number']?.toString().contains('-N') == true) {
+      // For opus and ncs colors, show similar colors from light, medium, and dark tabs
       ['light', 'medium', 'dark'].forEach((tab) {
         if (widget.allColors.containsKey(tab)) {
           for (var color in widget.allColors[tab]!) {
