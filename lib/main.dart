@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'color_detail_page.dart';
 import 'favorites_page.dart';
 import 'screens/color_picker_page.dart';
 import 'screens/drawing_canvas_page.dart';
-import 'providers/color_provider.dart';
 import 'wood.dart';
 
 void main() {
@@ -19,17 +17,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ColorProvider(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Color Palette',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: const ColorPalettePage(),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Color Palette',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
+      home: const ColorPalettePage(),
     );
   }
 }
@@ -43,13 +38,13 @@ class ColorPalettePage extends StatefulWidget {
 
 class _ColorPalettePageState extends State<ColorPalettePage>
     with SingleTickerProviderStateMixin {
-  late Map<String, List<dynamic>> colors;
   String searchQuery = '';
   Map<String, List<dynamic>> filteredColors = {};
   late SharedPreferences prefs;
   bool isLoading = true;
   late TabController _mainTabController;
   TabController? _asianTabController;
+  Set<String> _favoriteColors = {};
   Map<String, int> _loadedItemsCount = {
     'light': 20,
     'medium': 20,
@@ -67,7 +62,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     loadColorsAndFavorites();
     _mainTabController = TabController(length: 3, vsync: this);
     _mainTabController.addListener(_handleMainTabChange);
-    Provider.of<ColorProvider>(context, listen: false).loadFavorites();
+    _loadFavorites();
   }
 
   @override
@@ -112,25 +107,48 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       String jsonString =
           await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
-        colors = Map<String, List<dynamic>>.from(json.decode(jsonString));
+        filteredColors =
+            Map<String, List<dynamic>>.from(json.decode(jsonString));
         // Add wood colors to the colors map
-        colors['wood'] = WoodColors.colors;
-        // Initialize filteredColors with all colors
-        filteredColors = Map.fromEntries(
-          colors.entries.map((entry) => MapEntry(
-                entry.key,
-                (entry.value as List).cast<dynamic>(),
-              )),
-        );
+        filteredColors['wood'] = WoodColors.colors;
       });
     } catch (e) {
       print('Error loading colors: $e');
     }
   }
 
+  Future<void> _loadFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favorites = prefs.getStringList('favoriteColors') ?? [];
+      setState(() {
+        _favoriteColors = favorites.toSet();
+      });
+    } catch (e) {
+      print('Error loading favorites: $e');
+    }
+  }
+
   Future<void> toggleFavorite(String colorNumber) async {
-    Provider.of<ColorProvider>(context, listen: false)
-        .toggleFavorite(colorNumber);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favorites = prefs.getStringList('favoriteColors') ?? [];
+      if (favorites.contains(colorNumber)) {
+        favorites.remove(colorNumber);
+      } else {
+        favorites.add(colorNumber);
+      }
+      await prefs.setStringList('favoriteColors', favorites);
+      setState(() {
+        _favoriteColors = favorites.toSet();
+      });
+    } catch (e) {
+      print('Error toggling favorite: $e');
+    }
+  }
+
+  bool isFavorite(String colorNumber) {
+    return _favoriteColors.contains(colorNumber);
   }
 
   void filterColors(String query) {
@@ -138,7 +156,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       searchQuery = query;
       if (query.isEmpty) {
         filteredColors = Map.fromEntries(
-          colors.entries.map((entry) => MapEntry(
+          filteredColors.entries.map((entry) => MapEntry(
                 entry.key,
                 (entry.value as List).cast<dynamic>(),
               )),
@@ -146,7 +164,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       } else {
         // Keep a copy of all colors for finding similar colors
         Map<String, List<dynamic>> allColors = Map.fromEntries(
-          colors.entries.map((entry) => MapEntry(
+          filteredColors.entries.map((entry) => MapEntry(
                 entry.key,
                 (entry.value as List<dynamic>),
               )),
@@ -157,7 +175,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             query.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
         filteredColors = Map.fromEntries(
-          colors.entries.map((entry) {
+          filteredColors.entries.map((entry) {
             final allCategoryColors = (entry.value as List);
             final filteredCategoryColors = allCategoryColors.where((color) {
               try {
@@ -239,7 +257,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           }
           colorsByPage[page]!.add(color);
         } catch (e) {
-          debugPrint('Error processing page number: $e');
+          print('Error processing page number: $e');
           // Add to page 206 if there's an error
           if (!colorsByPage.containsKey(206)) {
             colorsByPage[206] = [];
@@ -311,17 +329,13 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                                         'tab': category,
                                       },
                                       onFavoriteToggle: toggleFavorite,
-                                      isFavorite: Provider.of<ColorProvider>(
-                                              context,
-                                              listen: false)
-                                          .isFavorite(color['number']),
-                                      allColors: colors,
+                                      isFavorite: isFavorite(color['number']),
+                                      allColors: filteredColors,
                                     ),
                                   ),
                                 );
                               } catch (e) {
-                                debugPrint(
-                                    'Error navigating to color detail: $e');
+                                print('Error navigating to color detail: $e');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
@@ -359,7 +373,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           ),
                         );
                       } catch (e) {
-                        debugPrint('Error building color card: $e');
+                        print('Error building color card: $e');
                         return const SizedBox.shrink();
                       }
                     },
@@ -367,14 +381,14 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 ],
               );
             } catch (e) {
-              debugPrint('Error building page $pageIndex: $e');
+              print('Error building page $pageIndex: $e');
               return const SizedBox.shrink();
             }
           },
         ),
       );
     } catch (e) {
-      debugPrint('Error in color grid: $e');
+      print('Error in color grid: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -411,12 +425,12 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   // Also check original number for exact matches with spaces/special chars
                   number.toLowerCase().contains(searchQuery);
             } catch (e) {
-              debugPrint('Error filtering NCS color: $e');
+              print('Error filtering NCS color: $e');
               return false;
             }
           }).toList();
         } catch (e) {
-          debugPrint('Error filtering NCS colors: $e');
+          print('Error filtering NCS colors: $e');
           categoryColors = [];
         }
       }
@@ -445,7 +459,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           }
           colorsByPage[page]!.add(color);
         } catch (e) {
-          debugPrint('Error processing page number: $e');
+          print('Error processing page number: $e');
           // Add to page 300 if there's an error
           if (!colorsByPage.containsKey(300)) {
             colorsByPage[300] = [];
@@ -529,17 +543,13 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                                         'tab': category,
                                       },
                                       onFavoriteToggle: toggleFavorite,
-                                      isFavorite: Provider.of<ColorProvider>(
-                                              context,
-                                              listen: false)
-                                          .isFavorite(color['number']),
+                                      isFavorite: isFavorite(color['number']),
                                       allColors: filteredColors,
                                     ),
                                   ),
                                 );
                               } catch (e) {
-                                debugPrint(
-                                    'Error navigating to color detail: $e');
+                                print('Error navigating to color detail: $e');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
@@ -590,7 +600,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           ),
                         );
                       } catch (e) {
-                        debugPrint('Error building color card: $e');
+                        print('Error building color card: $e');
                         return const SizedBox.shrink();
                       }
                     },
@@ -598,14 +608,14 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 ],
               );
             } catch (e) {
-              debugPrint('Error building page $pageIndex: $e');
+              print('Error building page $pageIndex: $e');
               return const SizedBox.shrink();
             }
           },
         ),
       );
     } catch (e) {
-      debugPrint('Error in NCS color grid: $e');
+      print('Error in NCS color grid: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -631,7 +641,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             visibleTabs.add(tab);
           }
         } catch (e) {
-          debugPrint('Error processing tab $tab: $e');
+          print('Error processing tab $tab: $e');
           continue;
         }
       }
@@ -666,7 +676,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   try {
                     return _buildColorGrid(tab);
                   } catch (e) {
-                    debugPrint('Error building color grid for tab $tab: $e');
+                    print('Error building color grid for tab $tab: $e');
                     return const Center(
                       child: Padding(
                         padding: EdgeInsets.all(16.0),
@@ -685,7 +695,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         ),
       );
     } catch (e) {
-      debugPrint('Error in Asian tab view: $e');
+      print('Error in Asian tab view: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -726,9 +736,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         OpusTabView(
           colors: filteredColors['opus'] ?? [],
           onFavoriteToggle: toggleFavorite,
-          favoriteColorNumbers:
-              Provider.of<ColorProvider>(context, listen: false)
-                  .favoriteColorNumbers,
+          favoriteColorNumbers: _favoriteColors,
           filteredColors: filteredColors,
           hexToColor: hexToColor,
         ),
@@ -763,7 +771,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 context,
                 MaterialPageRoute(
                   builder: (context) => ColorPickerPage(
-                    initialColors: colors,
+                    initialColors: filteredColors,
                   ),
                 ),
               );
@@ -778,9 +786,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   builder: (context) => FavoritesPage(
                     allColors: filteredColors,
                     onFavoriteToggle: toggleFavorite,
-                    favoriteColorNumbers:
-                        Provider.of<ColorProvider>(context, listen: false)
-                            .favoriteColorNumbers,
+                    favoriteColorNumbers: _favoriteColors,
                   ),
                 ),
               );

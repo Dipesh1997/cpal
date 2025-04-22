@@ -8,8 +8,6 @@ import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../color_detail_page.dart';
-import '../providers/color_provider.dart';
-import 'package:provider/provider.dart';
 
 class ColorPickerPage extends StatefulWidget {
   final Map<String, List<dynamic>>? initialColors;
@@ -27,6 +25,53 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
   File? _image;
   ui.Image? _uiImage;
   bool _showSimilarColors = false;
+  Set<String> _favoriteColors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadColors();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favorites = prefs.getStringList('favoriteColors') ?? [];
+      setState(() {
+        _favoriteColors = favorites.toSet();
+      });
+    } catch (e) {
+      print('Error loading favorites: $e');
+    }
+  }
+
+  Future<void> toggleFavorite(String colorIdentifier) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favorites = prefs.getStringList('favoriteColors') ?? [];
+
+      // Ensure we have a valid identifier
+      if (colorIdentifier.isEmpty) return;
+
+      if (favorites.contains(colorIdentifier)) {
+        favorites.remove(colorIdentifier);
+      } else {
+        favorites.add(colorIdentifier);
+      }
+      await prefs.setStringList('favoriteColors', favorites);
+      setState(() {
+        _favoriteColors = favorites.toSet();
+      });
+    } catch (e) {
+      print('Error toggling favorite: $e');
+    }
+  }
+
+  bool isFavorite(String colorIdentifier) {
+    if (colorIdentifier.isEmpty) return false;
+    return _favoriteColors.contains(colorIdentifier);
+  }
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -211,6 +256,10 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
   Widget _buildSimilarColorCard(Map<String, dynamic> color) {
     String displayText = color['name'] ?? color['number'] ?? '';
     String category = color['category']?.toString().toUpperCase() ?? '';
+    String colorIdentifier = color['number']?.toString() ??
+        color['value']?.toString() ??
+        color['hex']?.toString() ??
+        '';
 
     return Material(
       color: Colors.transparent,
@@ -221,13 +270,8 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
               builder: (context) => ColorDetailPage(
                 color: color,
                 allColors: colors,
-                onFavoriteToggle: (colorHex) {
-                  final colorProvider =
-                      Provider.of<ColorProvider>(context, listen: false);
-                  colorProvider.toggleFavorite(colorHex);
-                },
-                isFavorite: Provider.of<ColorProvider>(context, listen: false)
-                    .isFavorite(color['hex']),
+                onFavoriteToggle: toggleFavorite,
+                isFavorite: isFavorite(colorIdentifier),
               ),
             ),
           );
@@ -293,20 +337,19 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                             style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(width: 8),
-                          Consumer<ColorProvider>(
-                            builder: (context, colorProvider, _) {
-                              final isFavorite = colorProvider.isFavorite(color['hex']);
-                              return IconButton(
-                                icon: Icon(
-                                  isFavorite ? Icons.star : Icons.star_border,
-                                  color: isFavorite ? Colors.amber : Colors.grey,
-                                ),
-                                onPressed: () => colorProvider.toggleFavorite(color['hex']),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                iconSize: 20,
-                              );
-                            },
+                          IconButton(
+                            icon: Icon(
+                              isFavorite(colorIdentifier)
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: isFavorite(colorIdentifier)
+                                  ? Colors.amber
+                                  : Colors.grey,
+                            ),
+                            onPressed: () => toggleFavorite(colorIdentifier),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            iconSize: 20,
                           ),
                         ],
                       ),
@@ -422,12 +465,6 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadColors();
   }
 
   Future<void> _loadColors() async {

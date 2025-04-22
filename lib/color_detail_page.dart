@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/full_screen_color_page.dart';
-import 'providers/color_provider.dart';
 
 class ColorDetailPage extends StatefulWidget {
   final Map<String, dynamic> color;
@@ -11,22 +10,21 @@ class ColorDetailPage extends StatefulWidget {
   final bool isFavorite;
 
   const ColorDetailPage({
-    super.key,
+    Key? key,
     required this.color,
     required this.allColors,
     required this.onFavoriteToggle,
     required this.isFavorite,
-  });
+  }) : super(key: key);
 
   @override
   State<ColorDetailPage> createState() => _ColorDetailPageState();
 }
 
 class _ColorDetailPageState extends State<ColorDetailPage> {
-  late bool isFavorite;
+  bool _isFavorite = false;
   bool _isExpanded = false;
   List<Map<String, dynamic>> _similarColors = [];
-  late ColorProvider colorProvider;
 
   // Use a static cache for color conversion
   static final Map<String, Color> _colorCache = {};
@@ -34,16 +32,22 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   @override
   void initState() {
     super.initState();
-    colorProvider = Provider.of<ColorProvider>(context, listen: false);
-    isFavorite = widget.isFavorite;
+    _isFavorite = widget.isFavorite;
     _findSimilarColors();
   }
 
   void _handleFavoriteToggle() {
     setState(() {
-      isFavorite = !isFavorite;
+      _isFavorite = !_isFavorite;
     });
-    widget.onFavoriteToggle(widget.color['number']);
+    // Ensure we have a valid color number or hex value
+    String colorIdentifier = widget.color['number']?.toString() ??
+        widget.color['value']?.toString() ??
+        widget.color['hex']?.toString() ??
+        '';
+    if (colorIdentifier.isNotEmpty) {
+      widget.onFavoriteToggle(colorIdentifier);
+    }
   }
 
   Color hexToColor(String hexString) {
@@ -234,7 +238,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 },
                 allColors: widget.allColors,
                 onFavoriteToggle: widget.onFavoriteToggle,
-                isFavorite: widget.isFavorite,
+                isFavorite: _isFavorite,
               ),
             ),
           );
@@ -316,8 +320,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
           ),
           IconButton(
             icon: Icon(
-              isFavorite ? Icons.star : Icons.star_border,
-              color: Colors.yellow,
+              _isFavorite ? Icons.star : Icons.star_border,
+              color: _isFavorite ? Colors.amber : Colors.grey,
             ),
             onPressed: _handleFavoriteToggle,
           ),
