@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/full_screen_color_page.dart';
 
 class ColorDetailPage extends StatefulWidget {
