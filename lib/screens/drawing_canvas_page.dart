@@ -246,7 +246,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     });
   }
 
-  /// Shows the color picker modal with favorite colors and opacity slider
+  /// Shows the color picker modal with favorite colors and opacity buttons
   void _showColorPicker() {
     print('Showing color picker with favorites: $_favoriteColors');
 
@@ -380,6 +380,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                                     );
                                     _polygons[_selectedPolygonIndex!]['color'] =
                                         newColor;
+                                    // Force rebuild of the canvas
+                                    _polygons = List<Map<String, dynamic>>.from(
+                                        _polygons);
                                   } else {
                                     // Update the current drawing color
                                     _currentPolygonColor = Color.fromARGB(
@@ -388,40 +391,10 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                                       _currentPolygonColor.green,
                                       _currentPolygonColor.blue,
                                     );
-
-                                    if (_isDrawingHole) {
-                                      // Remove temporary hole if exists
-                                      if (_holes.isNotEmpty &&
-                                          _holes.last['isTemporary'] == true) {
-                                        _holes.removeLast();
-                                      }
-                                      _holes.add({
-                                        'points':
-                                            List<Offset>.from(_holePoints),
-                                        'color': Colors.transparent,
-                                      });
-                                      _holePoints.clear();
-                                      _isDrawingHole = false;
-                                    } else if (_isDrawingPolygon) {
-                                      // Remove temporary polygon if exists
-                                      if (_polygons.isNotEmpty &&
-                                          _polygons.last['isTemporary'] ==
-                                              true) {
-                                        _polygons.removeLast();
-                                      }
-                                      // Create a new color with the current opacity
-                                      final newColor = Color.fromARGB(
-                                        (opacity * 255).round(),
-                                        _currentPolygonColor.red,
-                                        _currentPolygonColor.green,
-                                        _currentPolygonColor.blue,
-                                      );
-                                      _polygons.add({
-                                        'points': List<Offset>.from(_points),
-                                        'color': newColor,
-                                      });
-                                      _points.clear();
-                                      _isDrawingPolygon = false;
+                                    // Update any temporary drawing
+                                    if (_isDrawingPolygon &&
+                                        _points.length >= 3) {
+                                      _updateDrawingWithCurrentState();
                                     }
                                   }
                                 });
@@ -431,7 +404,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                                     () {
                                   if (mounted) {
                                     setState(() {
-                                      // Trigger finish polygon to ensure changes are visible
                                       _finishPolygon();
                                       // Force a rebuild of the canvas
                                       _polygons =

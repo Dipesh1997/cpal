@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
 import 'color_detail_page.dart';
 import 'favorites_page.dart';
 import 'screens/color_picker_page.dart';
@@ -38,6 +37,7 @@ class ColorPalettePage extends StatefulWidget {
 
 class _ColorPalettePageState extends State<ColorPalettePage>
     with SingleTickerProviderStateMixin {
+  late Map<String, List<dynamic>> colors;
   String searchQuery = '';
   Map<String, List<dynamic>> filteredColors = {};
   late SharedPreferences prefs;
@@ -107,10 +107,16 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       String jsonString =
           await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
-        filteredColors =
-            Map<String, List<dynamic>>.from(json.decode(jsonString));
+        colors = Map<String, List<dynamic>>.from(json.decode(jsonString));
         // Add wood colors to the colors map
-        filteredColors['wood'] = WoodColors.colors;
+        colors['wood'] = WoodColors.colors;
+        // Initialize filteredColors with all colors
+        filteredColors = Map.fromEntries(
+          colors.entries.map((entry) => MapEntry(
+                entry.key,
+                (entry.value as List).cast<dynamic>(),
+              )),
+        );
       });
     } catch (e) {
       print('Error loading colors: $e');
@@ -156,7 +162,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       searchQuery = query;
       if (query.isEmpty) {
         filteredColors = Map.fromEntries(
-          filteredColors.entries.map((entry) => MapEntry(
+          colors.entries.map((entry) => MapEntry(
                 entry.key,
                 (entry.value as List).cast<dynamic>(),
               )),
@@ -164,7 +170,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       } else {
         // Keep a copy of all colors for finding similar colors
         Map<String, List<dynamic>> allColors = Map.fromEntries(
-          filteredColors.entries.map((entry) => MapEntry(
+          colors.entries.map((entry) => MapEntry(
                 entry.key,
                 (entry.value as List<dynamic>),
               )),
@@ -175,7 +181,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             query.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
         filteredColors = Map.fromEntries(
-          filteredColors.entries.map((entry) {
+          colors.entries.map((entry) {
             final allCategoryColors = (entry.value as List);
             final filteredCategoryColors = allCategoryColors.where((color) {
               try {
@@ -257,7 +263,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           }
           colorsByPage[page]!.add(color);
         } catch (e) {
-          print('Error processing page number: $e');
+          debugPrint('Error processing page number: $e');
           // Add to page 206 if there's an error
           if (!colorsByPage.containsKey(206)) {
             colorsByPage[206] = [];
@@ -330,12 +336,13 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                                       },
                                       onFavoriteToggle: toggleFavorite,
                                       isFavorite: isFavorite(color['number']),
-                                      allColors: filteredColors,
+                                      allColors: colors,
                                     ),
                                   ),
                                 );
                               } catch (e) {
-                                print('Error navigating to color detail: $e');
+                                debugPrint(
+                                    'Error navigating to color detail: $e');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
@@ -373,7 +380,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           ),
                         );
                       } catch (e) {
-                        print('Error building color card: $e');
+                        debugPrint('Error building color card: $e');
                         return const SizedBox.shrink();
                       }
                     },
@@ -381,14 +388,14 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 ],
               );
             } catch (e) {
-              print('Error building page $pageIndex: $e');
+              debugPrint('Error building page $pageIndex: $e');
               return const SizedBox.shrink();
             }
           },
         ),
       );
     } catch (e) {
-      print('Error in color grid: $e');
+      debugPrint('Error in color grid: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -425,12 +432,12 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   // Also check original number for exact matches with spaces/special chars
                   number.toLowerCase().contains(searchQuery);
             } catch (e) {
-              print('Error filtering NCS color: $e');
+              debugPrint('Error filtering NCS color: $e');
               return false;
             }
           }).toList();
         } catch (e) {
-          print('Error filtering NCS colors: $e');
+          debugPrint('Error filtering NCS colors: $e');
           categoryColors = [];
         }
       }
@@ -459,7 +466,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           }
           colorsByPage[page]!.add(color);
         } catch (e) {
-          print('Error processing page number: $e');
+          debugPrint('Error processing page number: $e');
           // Add to page 300 if there's an error
           if (!colorsByPage.containsKey(300)) {
             colorsByPage[300] = [];
@@ -549,7 +556,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                                   ),
                                 );
                               } catch (e) {
-                                print('Error navigating to color detail: $e');
+                                debugPrint(
+                                    'Error navigating to color detail: $e');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
@@ -600,7 +608,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           ),
                         );
                       } catch (e) {
-                        print('Error building color card: $e');
+                        debugPrint('Error building color card: $e');
                         return const SizedBox.shrink();
                       }
                     },
@@ -608,14 +616,14 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 ],
               );
             } catch (e) {
-              print('Error building page $pageIndex: $e');
+              debugPrint('Error building page $pageIndex: $e');
               return const SizedBox.shrink();
             }
           },
         ),
       );
     } catch (e) {
-      print('Error in NCS color grid: $e');
+      debugPrint('Error in NCS color grid: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -641,7 +649,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             visibleTabs.add(tab);
           }
         } catch (e) {
-          print('Error processing tab $tab: $e');
+          debugPrint('Error processing tab $tab: $e');
           continue;
         }
       }
@@ -676,7 +684,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   try {
                     return _buildColorGrid(tab);
                   } catch (e) {
-                    print('Error building color grid for tab $tab: $e');
+                    debugPrint('Error building color grid for tab $tab: $e');
                     return const Center(
                       child: Padding(
                         padding: EdgeInsets.all(16.0),
@@ -695,7 +703,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         ),
       );
     } catch (e) {
-      print('Error in Asian tab view: $e');
+      debugPrint('Error in Asian tab view: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -771,7 +779,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 context,
                 MaterialPageRoute(
                   builder: (context) => ColorPickerPage(
-                    initialColors: filteredColors,
+                    initialColors: colors,
                   ),
                 ),
               );
