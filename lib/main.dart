@@ -5,7 +5,14 @@ import 'color_detail_page.dart';
 import 'favorites_page.dart';
 import 'screens/color_picker_page.dart';
 import 'screens/drawing_canvas_page.dart';
-import 'wood.dart';
+import 'lightcolors.dart';
+import 'mediumcolors.dart';
+import 'darkcolors.dart';
+import 'sacolors.dart';
+import 'svcolors.dart';
+import 'opuscolors.dart';
+import 'ncscolors.dart';
+import 'woodcolors.dart';
 
 void main() {
   runApp(const MyApp());
@@ -104,12 +111,17 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
   Future<void> _loadColors() async {
     try {
-      String jsonString =
-          await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
-        colors = Map<String, List<dynamic>>.from(json.decode(jsonString));
-        // Add wood colors to the colors map
-        colors['wood'] = WoodColors.colors;
+        colors = {
+          'light': LightColors.colors,
+          'medium': MediumColors.colors,
+          'dark': DarkColors.colors,
+          'SA': SaColors.colors,
+          'SV': SvColors.colors,
+          'opus': OpusColors.colors,
+          'ncs': NcsColors.colors,
+          'wood': NcsColors.colors,
+        };
         // Initialize filteredColors with all colors
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) => MapEntry(
@@ -186,7 +198,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             final filteredCategoryColors = allCategoryColors.where((color) {
               try {
                 if (entry.key.toLowerCase() == 'ncs') {
-                  // Safely get the number and value, providing defaults if null
+                  // For NCS colors, check both number and value
                   String number = (color['number'] ?? '').toString();
                   String value = (color['value'] ?? '').toString();
 
@@ -412,35 +424,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   Widget _buildNCSColorGrid(String category) {
     try {
       List<dynamic> categoryColors = filteredColors[category] ?? [];
-      if (searchQuery.isNotEmpty) {
-        try {
-          categoryColors = categoryColors.where((color) {
-            try {
-              // Safely get the number and value, providing defaults if null
-              String number = (color['number'] ?? '').toString();
-              String value = (color['value'] ?? '').toString();
-
-              // Normalize both the search query and the color number
-              String normalizedQuery =
-                  searchQuery.replaceAll(RegExp(r'[^a-z0-9]'), '');
-              String normalizedNumber =
-                  number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-              String normalizedValue = value.toLowerCase();
-
-              return normalizedNumber.contains(normalizedQuery) ||
-                  normalizedValue.contains(searchQuery) ||
-                  // Also check original number for exact matches with spaces/special chars
-                  number.toLowerCase().contains(searchQuery);
-            } catch (e) {
-              debugPrint('Error filtering NCS color: $e');
-              return false;
-            }
-          }).toList();
-        } catch (e) {
-          debugPrint('Error filtering NCS colors: $e');
-          categoryColors = [];
-        }
-      }
 
       // If no colors, return empty container
       if (categoryColors.isEmpty) {
@@ -725,7 +708,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
     // Check Asian tabs
     bool hasAsianResults = false;
-    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV'];
+    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV', 'wood'];
     for (var tab in asianTabs) {
       if ((filteredColors[tab] ?? []).isNotEmpty) {
         hasAsianResults = true;

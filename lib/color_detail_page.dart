@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'screens/full_screen_color_page.dart';
+import 'lightcolors.dart';
+import 'mediumcolors.dart';
+import 'darkcolors.dart';
+import 'sacolors.dart';
+import 'svcolors.dart';
+import 'opuscolors.dart';
+import 'ncscolors.dart';
+import 'woodcolors.dart';
 
 class ColorDetailPage extends StatefulWidget {
   final Map<String, dynamic> color;

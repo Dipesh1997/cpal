@@ -4,6 +4,14 @@ import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
+import '../lightcolors.dart';
+import '../mediumcolors.dart';
+import '../darkcolors.dart';
+import '../sacolors.dart';
+import '../svcolors.dart';
+import '../opuscolors.dart';
+import '../ncscolors.dart';
+import '../woodcolors.dart';
 
 /// A class representing a drawing point with its position and paint properties
 class DrawingPoint {
@@ -60,13 +68,23 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   List<List<Map<String, dynamic>>> _undoHolesStack = [];
   List<List<Map<String, dynamic>>> _redoHolesStack = [];
 
+  // Add new properties for layers
+  List<Map<String, dynamic>> _layers = [];
+  int _currentLayerIndex = 0;
+
   /// Initializes the state and loads colors and favorites
   @override
   void initState() {
     super.initState();
     _loadColors();
     _loadFavorites();
-    // Show toast message after a short delay to ensure the page is loaded
+    // Initialize with a default layer
+    _layers.add({
+      'name': 'Layer 1',
+      'polygons': <Map<String, dynamic>>[],
+      'visible': true,
+    });
+    // Show toast message after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,10 +103,17 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   /// Loads color data from the colors.json file
   Future<void> _loadColors() async {
     try {
-      final String jsonString =
-          await DefaultAssetBundle.of(context).loadString('assets/colors.json');
       setState(() {
-        _allColors = Map<String, List<dynamic>>.from(json.decode(jsonString));
+        _allColors = {
+          'light': LightColors.colors,
+          'medium': MediumColors.colors,
+          'dark': DarkColors.colors,
+          'SA': SaColors.colors,
+          'SV': SaColors.colors,
+          'opus': OpusColors.colors,
+          'ncs': NcsColors.colors,
+          'wood': NcsColors.colors,
+        };
       });
     } catch (e) {
       print('Error loading colors: $e');
@@ -135,35 +160,154 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     }
   }
 
+  /// Shows the layers dialog
+  void _showLayersDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Polygon Layers'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _layers.length,
+              itemBuilder: (context, index) {
+                final layer = _layers[index];
+                final polygonCount = (layer['polygons'] as List).length;
+                return ListTile(
+                  leading: Checkbox(
+                    value: layer['visible'],
+                    onChanged: (value) {
+                      setState(() {
+                        _layers[index]['visible'] = value;
+                        _updateVisibleLayers();
+                      });
+                    },
+                  ),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller:
+                              TextEditingController(text: layer['name']),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                          ),
+                          onChanged: (value) {
+                            _layers[index]['name'] = value;
+                          },
+                        ),
+                      ),
+                      Text(
+                        '($polygonCount polygons)',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (index > 0)
+                        IconButton(
+                          icon: const Icon(Icons.arrow_upward),
+                          onPressed: () {
+                            setState(() {
+                              final temp = _layers[index];
+                              _layers[index] = _layers[index - 1];
+                              _layers[index - 1] = temp;
+                              _currentLayerIndex = index - 1;
+                              _updateVisibleLayers();
+                            });
+                          },
+                        ),
+                      if (index < _layers.length - 1)
+                        IconButton(
+                          icon: const Icon(Icons.arrow_downward),
+                          onPressed: () {
+                            setState(() {
+                              final temp = _layers[index];
+                              _layers[index] = _layers[index + 1];
+                              _layers[index + 1] = temp;
+                              _currentLayerIndex = index + 1;
+                              _updateVisibleLayers();
+                            });
+                          },
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          if (_layers.length > 1) {
+                            setState(() {
+                              _layers.removeAt(index);
+                              if (_currentLayerIndex >= _layers.length) {
+                                _currentLayerIndex = _layers.length - 1;
+                              }
+                              _updateVisibleLayers();
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  selected: index == _currentLayerIndex,
+                  onTap: () {
+                    setState(() {
+                      _currentLayerIndex = index;
+                      _updateVisibleLayers();
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _layers.add({
+                    'name': 'Layer ${_layers.length + 1}',
+                    'polygons': <Map<String, dynamic>>[],
+                    'visible': true,
+                  });
+                  _currentLayerIndex = _layers.length - 1;
+                  _updateVisibleLayers();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Add Layer'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateVisibleLayers() {
+    setState(() {
+      _polygons = [];
+      for (var layer in _layers) {
+        if (layer['visible']) {
+          _polygons
+              .addAll((layer['polygons'] as List).cast<Map<String, dynamic>>());
+        }
+      }
+    });
+  }
+
   /// Saves the current state to the undo stack
   void _saveState() {
     _undoStack.add(List<Map<String, dynamic>>.from(_polygons));
     _undoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
     _redoStack.clear();
     _redoHolesStack.clear();
-  }
 
-  /// Undoes the last action
-  void _undo() {
-    if (_undoStack.isNotEmpty) {
-      _redoStack.add(List<Map<String, dynamic>>.from(_polygons));
-      _redoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
-      setState(() {
-        _polygons = _undoStack.removeLast();
-        _holes = _undoHolesStack.removeLast();
-      });
-    }
-  }
-
-  /// Redoes the last undone action
-  void _redo() {
-    if (_redoStack.isNotEmpty) {
-      _undoStack.add(List<Map<String, dynamic>>.from(_polygons));
-      _undoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
-      setState(() {
-        _polygons = _redoStack.removeLast();
-        _holes = _redoHolesStack.removeLast();
-      });
+    // Save current state to the active layer
+    if (_currentLayerIndex >= 0 && _currentLayerIndex < _layers.length) {
+      _layers[_currentLayerIndex]['polygons'] =
+          List<Map<String, dynamic>>.from(_polygons);
     }
   }
 
@@ -190,6 +334,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           'color': newColor,
           'isTemporary': true,
         });
+        // Force rebuild of the canvas
+        _polygons = List<Map<String, dynamic>>.from(_polygons);
+        _holes = List<Map<String, dynamic>>.from(_holes);
       } else if (_isDrawingHole && _holePoints.length >= 3) {
         // Remove any existing temporary hole
         if (_holes.isNotEmpty && _holes.last['isTemporary'] == true) {
@@ -202,6 +349,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           'color': Colors.transparent,
           'isTemporary': true,
         });
+        // Force rebuild of the canvas
+        _polygons = List<Map<String, dynamic>>.from(_polygons);
+        _holes = List<Map<String, dynamic>>.from(_holes);
       }
     });
   }
@@ -282,18 +432,27 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
                     // Find the color in all color sets
                     Color color = Colors.black;
+                    Map<String, dynamic>? colorData;
+
+                    // Search through each color category
                     for (var category in _allColors.keys) {
-                      final colorData = _allColors[category]?.firstWhere(
-                        (color) => color['number'] == colorNumber,
-                        orElse: () => null,
-                      );
-                      if (colorData != null) {
-                        final hexValue = colorData['value']?.toString() ?? '';
-                        if (hexValue.isNotEmpty) {
-                          color = _getColorFromHex(hexValue);
-                          print('Found color: $hexValue');
-                          break;
+                      final colors = _allColors[category];
+                      if (colors != null) {
+                        for (var c in colors) {
+                          if (c['number'] == colorNumber) {
+                            colorData = c;
+                            break;
+                          }
                         }
+                        if (colorData != null) break;
+                      }
+                    }
+
+                    if (colorData != null) {
+                      final hexValue = colorData['value']?.toString() ?? '';
+                      if (hexValue.isNotEmpty) {
+                        color = _getColorFromHex(hexValue);
+                        print('Found color: $hexValue');
                       }
                     }
 
@@ -355,98 +514,165 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                   const Text('Opacity:'),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(10, (index) {
-                          final opacity = (index + 1) * 0.1;
-                          final isSelected = _opacity == opacity;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _opacity = opacity;
-                                  if (_selectedPolygonIndex != null) {
-                                    // Update the selected polygon's opacity
-                                    final currentColor =
-                                        _polygons[_selectedPolygonIndex!]
-                                            ['color'] as Color;
-                                    final newColor = Color.fromARGB(
-                                      (opacity * 255).round(),
-                                      currentColor.red,
-                                      currentColor.green,
-                                      currentColor.blue,
-                                    );
-                                    _polygons[_selectedPolygonIndex!]['color'] =
-                                        newColor;
-                                    // Force rebuild of the canvas
-                                    _polygons = List<Map<String, dynamic>>.from(
-                                        _polygons);
-                                  } else {
-                                    // Update the current drawing color
-                                    _currentPolygonColor = Color.fromARGB(
-                                      (opacity * 255).round(),
-                                      _currentPolygonColor.red,
-                                      _currentPolygonColor.green,
-                                      _currentPolygonColor.blue,
-                                    );
-                                    // Update any temporary drawing
-                                    if (_isDrawingPolygon &&
-                                        _points.length >= 3) {
-                                      _updateDrawingWithCurrentState();
-                                    }
-                                  }
-                                });
-                                Navigator.pop(context);
-                                // Force a UI update after a short delay
-                                Future.delayed(const Duration(milliseconds: 50),
-                                    () {
-                                  if (mounted) {
+                    child: Column(
+                      children: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: List.generate(10, (index) {
+                              final opacity = (index + 1) * 0.1;
+                              final isSelected = _opacity == opacity;
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                child: GestureDetector(
+                                  onTap: () {
                                     setState(() {
-                                      _finishPolygon();
-                                      // Force a rebuild of the canvas
-                                      _polygons =
-                                          List<Map<String, dynamic>>.from(
-                                              _polygons);
-                                      _holes = List<Map<String, dynamic>>.from(
-                                          _holes);
+                                      _opacity = opacity;
+                                      if (_selectedPolygonIndex != null) {
+                                        // Update the selected polygon's opacity
+                                        final currentColor =
+                                            _polygons[_selectedPolygonIndex!]
+                                                ['color'] as Color;
+                                        final newColor = Color.fromARGB(
+                                          (opacity * 255).round(),
+                                          currentColor.red,
+                                          currentColor.green,
+                                          currentColor.blue,
+                                        );
+                                        _polygons[_selectedPolygonIndex!]
+                                            ['color'] = newColor;
+                                        // Force rebuild of the canvas
+                                        _polygons =
+                                            List<Map<String, dynamic>>.from(
+                                                _polygons);
+                                      } else {
+                                        // Update the current drawing color
+                                        _currentPolygonColor = Color.fromARGB(
+                                          (opacity * 255).round(),
+                                          _currentPolygonColor.red,
+                                          _currentPolygonColor.green,
+                                          _currentPolygonColor.blue,
+                                        );
+                                        // Update any temporary drawing
+                                        if (_isDrawingPolygon &&
+                                            _points.length >= 3) {
+                                          _updateDrawingWithCurrentState();
+                                        }
+                                      }
                                     });
-                                  }
-                                });
-                              },
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.blue
-                                      : Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color:
-                                        isSelected ? Colors.blue : Colors.grey,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${(opacity * 100).round()}',
-                                    style: TextStyle(
+                                    Navigator.pop(context);
+                                    // Force a UI update after a short delay
+                                    Future.delayed(
+                                        const Duration(milliseconds: 50), () {
+                                      if (mounted) {
+                                        setState(() {
+                                          _finishPolygon();
+                                          // Force a rebuild of the canvas
+                                          _polygons =
+                                              List<Map<String, dynamic>>.from(
+                                                  _polygons);
+                                          _holes =
+                                              List<Map<String, dynamic>>.from(
+                                                  _holes);
+                                        });
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
+                                          ? Colors.blue
+                                          : Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? Colors.blue
+                                            : Colors.grey,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${(opacity * 100).round()}',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
+                              );
+                            }),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Slider(
+                          value: _opacity,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 100,
+                          label: '${(_opacity * 100).round()}%',
+                          onChanged: (value) {
+                            setState(() {
+                              _opacity = value;
+                              if (_selectedPolygonIndex != null) {
+                                // Update the selected polygon's opacity
+                                final currentColor =
+                                    _polygons[_selectedPolygonIndex!]['color']
+                                        as Color;
+                                final newColor = Color.fromARGB(
+                                  (value * 255).round(),
+                                  currentColor.red,
+                                  currentColor.green,
+                                  currentColor.blue,
+                                );
+                                _polygons[_selectedPolygonIndex!]['color'] =
+                                    newColor;
+                                // Force rebuild of the canvas
+                                _polygons =
+                                    List<Map<String, dynamic>>.from(_polygons);
+                              } else {
+                                // Update the current drawing color
+                                _currentPolygonColor = Color.fromARGB(
+                                  (value * 255).round(),
+                                  _currentPolygonColor.red,
+                                  _currentPolygonColor.green,
+                                  _currentPolygonColor.blue,
+                                );
+                                // Update any temporary drawing
+                                if (_isDrawingPolygon && _points.length >= 3) {
+                                  _updateDrawingWithCurrentState();
+                                }
+                              }
+                            });
+                          },
+                          onChangeEnd: (value) {
+                            Navigator.pop(context);
+                            // Force a UI update after a short delay
+                            Future.delayed(const Duration(milliseconds: 50),
+                                () {
+                              if (mounted) {
+                                setState(() {
+                                  _finishPolygon();
+                                  // Force a rebuild of the canvas
+                                  _polygons = List<Map<String, dynamic>>.from(
+                                      _polygons);
+                                  _holes =
+                                      List<Map<String, dynamic>>.from(_holes);
+                                });
+                              }
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -484,6 +710,11 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           });
           _holePoints.clear();
           _isDrawingHole = false;
+          // Save to current layer
+          if (_currentLayerIndex >= 0 && _currentLayerIndex < _layers.length) {
+            _layers[_currentLayerIndex]['holes'] =
+                List<Map<String, dynamic>>.from(_holes);
+          }
         } else {
           // Remove temporary polygon if exists
           if (_polygons.isNotEmpty && _polygons.last['isTemporary'] == true) {
@@ -502,7 +733,15 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           });
           _points.clear();
           _isDrawingPolygon = false;
+          // Save to current layer
+          if (_currentLayerIndex >= 0 && _currentLayerIndex < _layers.length) {
+            _layers[_currentLayerIndex]['polygons'] =
+                List<Map<String, dynamic>>.from(_polygons);
+          }
         }
+        // Force rebuild of the canvas
+        _polygons = List<Map<String, dynamic>>.from(_polygons);
+        _holes = List<Map<String, dynamic>>.from(_holes);
       });
     }
   }
@@ -514,6 +753,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         _isDrawingHole = true;
         _isDrawingPolygon = false;
         _holePoints.clear();
+        // Force rebuild of the canvas
+        _polygons = List<Map<String, dynamic>>.from(_polygons);
+        _holes = List<Map<String, dynamic>>.from(_holes);
       });
     }
   }
@@ -551,12 +793,8 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         title: const Text('Drawing Canvas'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: _undoStack.isNotEmpty ? _undo : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.redo),
-            onPressed: _redoStack.isNotEmpty ? _redo : null,
+            icon: const Icon(Icons.layers),
+            onPressed: _showLayersDialog,
           ),
           IconButton(
             icon: const Icon(Icons.photo_library),
@@ -832,27 +1070,78 @@ class _DrawingPainter extends CustomPainter {
         var finalPath = Path();
         finalPath.addPath(polygonPath, Offset.zero);
 
-        for (var hole in polygonHoles) {
-          final holePath = Path();
-          final transformedHolePoints = (hole['points'] as List<Offset>)
-              .map((point) =>
-                  _transformPoint(point, _imageTransform ?? Matrix4.identity()))
-              .toList();
-          holePath.moveTo(
-              transformedHolePoints[0].dx, transformedHolePoints[0].dy);
-          for (var i = 1; i < transformedHolePoints.length; i++) {
-            holePath.lineTo(
-                transformedHolePoints[i].dx, transformedHolePoints[i].dy);
-          }
-          holePath.close();
-
-          finalPath =
-              Path.combine(PathOperation.difference, finalPath, holePath);
-        }
-
         // Draw the filled polygon with holes
-        canvas.drawPath(finalPath, Paint()..color = polygon['color']);
-        canvas.drawPath(finalPath, paint);
+        if (backgroundImage != null) {
+          // If there's a background image, draw the polygon with holes
+          for (var hole in polygonHoles) {
+            final holePath = Path();
+            final transformedHolePoints = (hole['points'] as List<Offset>)
+                .map((point) => _transformPoint(
+                    point, _imageTransform ?? Matrix4.identity()))
+                .toList();
+            holePath.moveTo(
+                transformedHolePoints[0].dx, transformedHolePoints[0].dy);
+            for (var i = 1; i < transformedHolePoints.length; i++) {
+              holePath.lineTo(
+                  transformedHolePoints[i].dx, transformedHolePoints[i].dy);
+            }
+            holePath.close();
+            finalPath =
+                Path.combine(PathOperation.difference, finalPath, holePath);
+          }
+
+          // Draw the polygon with holes
+          canvas.drawPath(finalPath, Paint()..color = polygon['color']);
+          canvas.drawPath(finalPath, paint);
+
+          // Draw the background image through the holes with full opacity
+          for (var hole in polygonHoles) {
+            final holePath = Path();
+            final transformedHolePoints = (hole['points'] as List<Offset>)
+                .map((point) => _transformPoint(
+                    point, _imageTransform ?? Matrix4.identity()))
+                .toList();
+            holePath.moveTo(
+                transformedHolePoints[0].dx, transformedHolePoints[0].dy);
+            for (var i = 1; i < transformedHolePoints.length; i++) {
+              holePath.lineTo(
+                  transformedHolePoints[i].dx, transformedHolePoints[i].dy);
+            }
+            holePath.close();
+
+            // Save the current canvas state
+            canvas.save();
+            // Clip to the hole path
+            canvas.clipPath(holePath);
+            // Draw the background image with full opacity
+            canvas.transform(_imageTransform!.storage);
+            canvas.drawImage(backgroundImage!, Offset.zero,
+                Paint()..color = Colors.white.withOpacity(1.0));
+            canvas.transform(Matrix4.identity().storage);
+            // Restore the canvas state
+            canvas.restore();
+          }
+        } else {
+          // If no background image, just draw the polygon with transparent holes
+          for (var hole in polygonHoles) {
+            final holePath = Path();
+            final transformedHolePoints = (hole['points'] as List<Offset>)
+                .map((point) => _transformPoint(
+                    point, _imageTransform ?? Matrix4.identity()))
+                .toList();
+            holePath.moveTo(
+                transformedHolePoints[0].dx, transformedHolePoints[0].dy);
+            for (var i = 1; i < transformedHolePoints.length; i++) {
+              holePath.lineTo(
+                  transformedHolePoints[i].dx, transformedHolePoints[i].dy);
+            }
+            holePath.close();
+            finalPath =
+                Path.combine(PathOperation.difference, finalPath, holePath);
+          }
+          canvas.drawPath(finalPath, Paint()..color = polygon['color']);
+          canvas.drawPath(finalPath, paint);
+        }
 
         // Draw the hole outlines
         for (var hole in polygonHoles) {

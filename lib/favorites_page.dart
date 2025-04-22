@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'color_detail_page.dart';
+import 'lightcolors.dart';
+import 'mediumcolors.dart';
+import 'darkcolors.dart';
+import 'sacolors.dart';
+import 'svcolors.dart';
+import 'opuscolors.dart';
+import 'ncscolors.dart';
+import 'woodcolors.dart';
 
 class FavoritesPage extends StatelessWidget {
   final Map<String, dynamic> allColors;
@@ -25,13 +33,15 @@ class FavoritesPage extends StatelessWidget {
     allColors.forEach((category, colors) {
       for (var color in colors) {
         // Skip colors that don't have required fields
-        if (color == null || color['number'] == null || color['value'] == null) continue;
-        
+        if (color == null || color['number'] == null || color['value'] == null)
+          continue;
+
         if (favoriteColorNumbers.contains(color['number'])) {
           // Ensure all required fields have default values
           favorites.add({
             ...color,
-            'name': color['name'] ?? '',  // Default to empty string if name is null
+            'name':
+                color['name'] ?? '', // Default to empty string if name is null
             'number': color['number'],
             'value': color['value'],
           });
@@ -74,15 +84,15 @@ class FavoritesPage extends StatelessWidget {
                           },
                           onFavoriteToggle: onFavoriteToggle,
                           isFavorite: true,
-                          allColors: allColors.map((key, value) => 
-                            MapEntry(key, value as List<dynamic>)),
+                          allColors: allColors.map((key, value) =>
+                              MapEntry(key, value as List<dynamic>)),
                         ),
                       ),
                     );
                   },
                   child: Card(
                     elevation: 4,
-                    color: hexToColor(color['value']), // Add this
+                    color: hexToColor(color['value']),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: Stack(
