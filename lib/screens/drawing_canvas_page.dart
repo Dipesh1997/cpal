@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:flutter/rendering.dart';
 import '../lightcolors.dart';
 import '../mediumcolors.dart';
 import '../darkcolors.dart';
@@ -71,6 +76,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   // Add new properties for layers
   List<Map<String, dynamic>> _layers = [];
   int _currentLayerIndex = 0;
+
+  // Add a GlobalKey for the canvas
+  final GlobalKey _canvasKey = GlobalKey();
 
   /// Initializes the state and loads colors and favorites
   @override
@@ -727,9 +735,31 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             _currentPolygonColor.green,
             _currentPolygonColor.blue,
           );
+
+          // Find the color number for the current color
+          String? colorNumber;
+          for (var category in _allColors.keys) {
+            final colors = _allColors[category];
+            if (colors != null) {
+              for (var color in colors) {
+                if (color['value'] != null) {
+                  final hexColor = _getColorFromHex(color['value']);
+                  if (hexColor.red == _currentPolygonColor.red &&
+                      hexColor.green == _currentPolygonColor.green &&
+                      hexColor.blue == _currentPolygonColor.blue) {
+                    colorNumber = color['number'];
+                    break;
+                  }
+                }
+              }
+            }
+            if (colorNumber != null) break;
+          }
+
           _polygons.add({
             'points': List<Offset>.from(_points),
             'color': newColor,
+            'colorNumber': colorNumber, // Store the color number
           });
           _points.clear();
           _isDrawingPolygon = false;
@@ -778,6 +808,251 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     return c;
   }
 
+  // Add a method to capture the canvas as an image with embedded color information
+  Future<File?> _captureCanvas() async {
+    try {
+      // Find the RenderRepaintBoundary
+      RenderRepaintBoundary boundary = _canvasKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+
+      // Capture the image
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if (byteData != null) {
+        // Create a new image with extra space for color information
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+
+        // Draw the original image
+        final ui.Image originalImage =
+            await decodeImageFromList(byteData.buffer.asUint8List());
+        canvas.drawImage(originalImage, Offset.zero, Paint());
+
+        // Collect all unique colors used in polygons
+        Set<String> usedColorNumbers = {};
+        Map<String, Color> colorMap = {};
+
+        // First pass: collect all colors from polygons
+        for (var polygon in _polygons) {
+          if (polygon['color'] != null) {
+            final Color polygonColor = polygon['color'] as Color;
+            // Find matching color from color sets
+            for (var category in _allColors.keys) {
+              final colors = _allColors[category];
+              if (colors != null) {
+                for (var color in colors) {
+                  if (color['value'] != null) {
+                    final hexColor = _getColorFromHex(color['value']);
+                    // Compare RGB values (ignoring alpha)
+                    if (hexColor.red == polygonColor.red &&
+                        hexColor.green == polygonColor.green &&
+                        hexColor.blue == polygonColor.blue) {
+                      usedColorNumbers.add(color['number']);
+                      colorMap[color['number']] = hexColor;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Find color details for each used color
+        List<Map<String, dynamic>> colorDetails = [];
+        for (var colorNumber in usedColorNumbers) {
+          for (var category in _allColors.keys) {
+            final colors = _allColors[category];
+            if (colors != null) {
+              for (var color in colors) {
+                if (color['number'] == colorNumber) {
+                  colorDetails.add({
+                    'number': color['number'],
+                    'name': color['name'] ?? 'Unknown',
+                    'page': color['page'] ?? 'N/A',
+                    'category': category,
+                    'value': color['value'] ?? '#000000',
+                  });
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // Sort color details by category and number
+        colorDetails.sort((a, b) {
+          int categoryCompare =
+              a['category'].toString().compareTo(b['category'].toString());
+          if (categoryCompare != 0) return categoryCompare;
+          return a['number'].toString().compareTo(b['number'].toString());
+        });
+
+        // Draw color information
+        final textPainter = TextPainter(
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.left,
+        );
+
+        // Calculate the height needed for the color information
+        double yOffset = originalImage.height.toDouble();
+        const double padding = 20.0;
+        const double lineHeight = 30.0;
+        const double colorBoxSize = 24.0;
+
+        // Draw header
+        textPainter.text = TextSpan(
+          text: 'COLORS USED IN CANVAS:',
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        );
+        textPainter.layout();
+        textPainter.paint(canvas, Offset(padding, yOffset));
+        yOffset += lineHeight * 1.5;
+
+        // Draw divider
+        final paint = Paint()
+          ..color = Colors.black
+          ..strokeWidth = 2.0;
+        canvas.drawLine(
+          Offset(padding, yOffset),
+          Offset(originalImage.width - padding, yOffset),
+          paint,
+        );
+        yOffset += lineHeight;
+
+        if (colorDetails.isEmpty) {
+          textPainter.text = TextSpan(
+            text: 'No specific colors were used in the canvas.',
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 16,
+            ),
+          );
+          textPainter.layout();
+          textPainter.paint(canvas, Offset(padding, yOffset));
+        } else {
+          // Draw color information with preview boxes
+          for (int i = 0; i < colorDetails.length; i++) {
+            final color = colorDetails[i];
+            final colorValue = color['value'] as String;
+            final previewColor = _getColorFromHex(colorValue);
+
+            // Draw color preview box
+            final colorBoxRect = Rect.fromLTWH(
+              padding,
+              yOffset + (lineHeight - colorBoxSize) / 2,
+              colorBoxSize,
+              colorBoxSize,
+            );
+            canvas.drawRect(
+              colorBoxRect,
+              Paint()..color = previewColor,
+            );
+            canvas.drawRect(
+              colorBoxRect,
+              Paint()
+                ..color = Colors.black
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.0,
+            );
+
+            // Draw color number and name
+            textPainter.text = TextSpan(
+              text: '${i + 1}. ${color['number']} - ${color['name']}',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+            textPainter.layout();
+            textPainter.paint(
+                canvas, Offset(padding + colorBoxSize + 10, yOffset));
+            yOffset += lineHeight;
+
+            // Draw category and page
+            textPainter.text = TextSpan(
+              text: '   Category: ${color['category']}, Page: ${color['page']}',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+              ),
+            );
+            textPainter.layout();
+            textPainter.paint(
+                canvas, Offset(padding + colorBoxSize + 10, yOffset));
+            yOffset += lineHeight * 1.5;
+          }
+        }
+
+        // Add background image information if available
+        if (backgroundImage != null) {
+          textPainter.text = TextSpan(
+            text: 'Background image is included in the canvas.',
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+            ),
+          );
+          textPainter.layout();
+          textPainter.paint(canvas, Offset(padding, yOffset));
+        }
+
+        // Create the final image
+        final picture = recorder.endRecording();
+        final extendedImage = await picture.toImage(
+          originalImage.width,
+          (yOffset + padding).toInt(),
+        );
+        final extendedByteData =
+            await extendedImage.toByteData(format: ui.ImageByteFormat.png);
+
+        // Save the extended image
+        final directory = await getTemporaryDirectory();
+        final String imagePath = '${directory.path}/canvas_share.png';
+        final File imageFile = File(imagePath);
+        await imageFile.writeAsBytes(extendedByteData!.buffer.asUint8List());
+
+        return imageFile;
+      }
+    } catch (e) {
+      print('Error capturing canvas: $e');
+    }
+    return null;
+  }
+
+  // Update the share method to only share the image
+  Future<void> _shareCanvas() async {
+    try {
+      // Capture the canvas as an image with embedded color information
+      File? imageFile = await _captureCanvas();
+      if (imageFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to capture canvas image')),
+        );
+        return;
+      }
+
+      // Share the image
+      await Share.shareXFiles(
+        [XFile(imageFile.path)],
+        text: 'Canvas drawing with color information',
+      );
+    } catch (e) {
+      print('Error sharing canvas: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to share canvas')),
+      );
+    }
+  }
+
   /// Builds the main UI of the drawing canvas
   @override
   Widget build(BuildContext context) {
@@ -799,6 +1074,10 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           IconButton(
             icon: const Icon(Icons.photo_library),
             onPressed: _pickImage,
+          ),
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: _shareCanvas,
           ),
         ],
       ),
@@ -830,70 +1109,73 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: GestureDetector(
-                        onTap: () {
-                          if (!_isDrawingPolygon && !_isDrawingHole) {
-                            final tapPosition = _lastTapPosition;
-                            if (tapPosition != null) {
-                              for (int i = 0; i < _polygons.length; i++) {
-                                final polygon = _polygons[i];
-                                final points =
-                                    polygon['points'] as List<Offset>;
-                                if (points.isNotEmpty &&
-                                    _isPointInPolygon(tapPosition, points)) {
-                                  setState(() {
-                                    _selectedPolygonIndex = i;
-                                  });
-                                  _showColorPicker();
-                                  break;
+                      child: RepaintBoundary(
+                        key: _canvasKey,
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!_isDrawingPolygon && !_isDrawingHole) {
+                              final tapPosition = _lastTapPosition;
+                              if (tapPosition != null) {
+                                for (int i = 0; i < _polygons.length; i++) {
+                                  final polygon = _polygons[i];
+                                  final points =
+                                      polygon['points'] as List<Offset>;
+                                  if (points.isNotEmpty &&
+                                      _isPointInPolygon(tapPosition, points)) {
+                                    setState(() {
+                                      _selectedPolygonIndex = i;
+                                    });
+                                    _showColorPicker();
+                                    break;
+                                  }
                                 }
                               }
                             }
-                          }
-                        },
-                        onTapDown: (details) {
-                          setState(() {
-                            _lastTapPosition = details.localPosition;
-                            if (_isDrawingPolygon || _isDrawingHole) {
-                              if (_isDrawingHole) {
-                                _holePoints.add(details.localPosition);
-                                // Force rebuild of hole points
-                                _holePoints = List<Offset>.from(_holePoints);
-                              } else {
-                                _points.add(details.localPosition);
-                                // Force rebuild of polygon points
-                                _points = List<Offset>.from(_points);
+                          },
+                          onTapDown: (details) {
+                            setState(() {
+                              _lastTapPosition = details.localPosition;
+                              if (_isDrawingPolygon || _isDrawingHole) {
+                                if (_isDrawingHole) {
+                                  _holePoints.add(details.localPosition);
+                                  // Force rebuild of hole points
+                                  _holePoints = List<Offset>.from(_holePoints);
+                                } else {
+                                  _points.add(details.localPosition);
+                                  // Force rebuild of polygon points
+                                  _points = List<Offset>.from(_points);
+                                }
+                                _updateDrawingWithCurrentState();
                               }
-                              _updateDrawingWithCurrentState();
+                            });
+                          },
+                          onTapUp: (details) {
+                            if (_isDrawingPolygon || _isDrawingHole) {
+                              setState(() {
+                                _updateDrawingWithCurrentState();
+                              });
                             }
-                          });
-                        },
-                        onTapUp: (details) {
-                          if (_isDrawingPolygon || _isDrawingHole) {
-                            setState(() {
-                              _updateDrawingWithCurrentState();
-                            });
-                          }
-                        },
-                        onTapCancel: () {
-                          if (_isDrawingPolygon || _isDrawingHole) {
-                            setState(() {
-                              _updateDrawingWithCurrentState();
-                            });
-                          }
-                        },
-                        child: CustomPaint(
-                          painter: _DrawingPainter(
-                            backgroundImage: renderedImage,
-                            polygons: _polygons,
-                            holes: _holes,
-                            isDrawingPolygon: _isDrawingPolygon,
-                            isDrawingHole: _isDrawingHole,
-                            currentPolygonColor: _currentPolygonColor,
-                            points: _points,
-                            holePoints: _holePoints,
+                          },
+                          onTapCancel: () {
+                            if (_isDrawingPolygon || _isDrawingHole) {
+                              setState(() {
+                                _updateDrawingWithCurrentState();
+                              });
+                            }
+                          },
+                          child: CustomPaint(
+                            painter: _DrawingPainter(
+                              backgroundImage: renderedImage,
+                              polygons: _polygons,
+                              holes: _holes,
+                              isDrawingPolygon: _isDrawingPolygon,
+                              isDrawingHole: _isDrawingHole,
+                              currentPolygonColor: _currentPolygonColor,
+                              points: _points,
+                              holePoints: _holePoints,
+                            ),
+                            size: Size(width, height),
                           ),
-                          size: Size(width, height),
                         ),
                       ),
                     ),
