@@ -830,12 +830,12 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       visibleTabs.add(const Tab(text: 'ASIAN'));
     }
 
-    // Check Opus tab
+    // Check Opus tab - only show if there are Opus results
     if ((filteredColors['opus'] ?? []).isNotEmpty) {
       visibleTabs.add(const Tab(text: 'OPUS'));
     }
 
-    // Check NCS tab
+    // Check NCS tab - only show if there are NCS results
     if ((filteredColors['ncs'] ?? []).isNotEmpty) {
       visibleTabs.add(const Tab(text: 'NCS'));
     }
@@ -934,7 +934,31 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   : TabBarView(
                       controller: _mainTabController,
                       children: List.generate(visibleTabs.length, (index) {
-                        return _getCachedTabView(index);
+                        // Map the visible tabs to their corresponding views
+                        if (index == 0 && hasAsianResults) {
+                          return _buildAsianTabView();
+                        } else if ((index == 0 && !hasAsianResults) ||
+                            (index == 1 && hasAsianResults)) {
+                          return OpusTabView(
+                            key: ValueKey(
+                                'opus_${searchQuery}_${DateTime.now().millisecondsSinceEpoch}'),
+                            colors: filteredColors['opus'] ?? [],
+                            onFavoriteToggle: toggleFavorite,
+                            favoriteColorNumbers: _favoriteColors,
+                            filteredColors: filteredColors,
+                            hexToColor: hexToColor,
+                          );
+                        } else {
+                          return NCSTabView(
+                            key: ValueKey(
+                                'ncs_${searchQuery}_${DateTime.now().millisecondsSinceEpoch}'),
+                            colors: filteredColors['ncs'] ?? [],
+                            onFavoriteToggle: toggleFavorite,
+                            favoriteColorNumbers: _favoriteColors,
+                            filteredColors: filteredColors,
+                            hexToColor: hexToColor,
+                          );
+                        }
                       }),
                     ),
             ),
