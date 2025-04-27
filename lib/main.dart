@@ -173,7 +173,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           'SV': SvColors.colors,
           'opus': OpusColors.colors,
           'ncs': NcsColors.colors,
-          'wood': NcsColors.colors,
+          'wood': WoodColors.colors,
         };
         // Initialize filteredColors with all colors
         filteredColors = Map.fromEntries(

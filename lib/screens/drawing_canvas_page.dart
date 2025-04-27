@@ -109,10 +109,10 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           'medium': MediumColors.colors,
           'dark': DarkColors.colors,
           'SA': SaColors.colors,
-          'SV': SaColors.colors,
+          'SV': SvColors.colors,
           'opus': OpusColors.colors,
           'ncs': NcsColors.colors,
-          'wood': NcsColors.colors,
+          'wood': WoodColors.colors,
         };
       });
     } catch (e) {
