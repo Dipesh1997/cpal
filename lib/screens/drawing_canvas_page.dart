@@ -73,12 +73,11 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   List<List<Map<String, dynamic>>> _undoHolesStack = [];
   List<List<Map<String, dynamic>>> _redoHolesStack = [];
 
-  // Add new properties for layers
-  List<Map<String, dynamic>> _layers = [];
-  int _currentLayerIndex = 0;
-
   // Add a GlobalKey for the canvas
   final GlobalKey _canvasKey = GlobalKey();
+
+  // Add this property to store current color data
+  Map<String, dynamic>? _currentColorData;
 
   /// Initializes the state and loads colors and favorites
   @override
@@ -86,12 +85,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     super.initState();
     _loadColors();
     _loadFavorites();
-    // Initialize with a default layer
-    _layers.add({
-      'name': 'Layer 1',
-      'polygons': <Map<String, dynamic>>[],
-      'visible': true,
-    });
     // Show toast message after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -168,121 +161,82 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     }
   }
 
-  /// Shows the layers dialog
-  void _showLayersDialog() {
+  /// Shows the walls management dialog
+  void _showWallsDialog() {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Polygon Layers'),
+          title: const Text('Walls'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: _layers.length,
+              itemCount: _polygons.length,
               itemBuilder: (context, index) {
-                final layer = _layers[index];
-                final polygonCount = (layer['polygons'] as List).length;
+                final polygon = _polygons[index];
+                final wallName = polygon['name'] ?? 'Wall ${index + 1}';
+                final colorNumber = polygon['colorNumber'] ?? 'Unknown';
+                final colorName = polygon['colorName'] ?? 'Unknown';
+                final category = polygon['category'] ?? 'Unknown';
+                final page = polygon['page'] ?? 'N/A';
+
                 return ListTile(
-                  leading: Checkbox(
-                    value: layer['visible'],
-                    onChanged: (value) {
-                      setState(() {
-                        _layers[index]['visible'] = value;
-                        _updateVisibleLayers();
-                      });
-                    },
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: polygon['color'] as Color,
+                      border: Border.all(color: Colors.grey),
+                    ),
                   ),
                   title: Row(
                     children: [
                       Expanded(
                         child: TextField(
-                          controller:
-                              TextEditingController(text: layer['name']),
+                          controller: TextEditingController(text: wallName),
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                           ),
                           onChanged: (value) {
-                            _layers[index]['name'] = value;
+                            _polygons[index]['name'] = value;
                           },
                         ),
                       ),
-                      Text(
-                        '($polygonCount polygons)',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          setState(() {
+                            _selectedPolygonIndex = index;
+                          });
+                          Navigator.pop(context);
+                          _showColorPicker();
+                        },
                       ),
-                      if (index > 0)
-                        IconButton(
-                          icon: const Icon(Icons.arrow_upward),
-                          onPressed: () {
-                            setState(() {
-                              final temp = _layers[index];
-                              _layers[index] = _layers[index - 1];
-                              _layers[index - 1] = temp;
-                              _currentLayerIndex = index - 1;
-                              _updateVisibleLayers();
-                            });
-                          },
-                        ),
-                      if (index < _layers.length - 1)
-                        IconButton(
-                          icon: const Icon(Icons.arrow_downward),
-                          onPressed: () {
-                            setState(() {
-                              final temp = _layers[index];
-                              _layers[index] = _layers[index + 1];
-                              _layers[index + 1] = temp;
-                              _currentLayerIndex = index + 1;
-                              _updateVisibleLayers();
-                            });
-                          },
-                        ),
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () {
-                          if (_layers.length > 1) {
-                            setState(() {
-                              _layers.removeAt(index);
-                              if (_currentLayerIndex >= _layers.length) {
-                                _currentLayerIndex = _layers.length - 1;
-                              }
-                              _updateVisibleLayers();
-                            });
-                          }
+                          setState(() {
+                            _polygons.removeAt(index);
+                            _saveState();
+                            // Force rebuild of the canvas
+                            _polygons =
+                                List<Map<String, dynamic>>.from(_polygons);
+                          });
+                          // Close the dialog and rebuild the main widget
+                          Navigator.pop(context);
+                          this.setState(() {});
                         },
                       ),
                     ],
                   ),
-                  selected: index == _currentLayerIndex,
-                  onTap: () {
-                    setState(() {
-                      _currentLayerIndex = index;
-                      _updateVisibleLayers();
-                    });
-                  },
+                  subtitle: Text(
+                      'Color: $colorNumber - $colorName\nCategory: $category, Page: $page'),
                 );
               },
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _layers.add({
-                    'name': 'Layer ${_layers.length + 1}',
-                    'polygons': <Map<String, dynamic>>[],
-                    'visible': true,
-                  });
-                  _currentLayerIndex = _layers.length - 1;
-                  _updateVisibleLayers();
-                });
-                Navigator.pop(context);
-              },
-              child: const Text('Add Layer'),
-            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Close'),
@@ -293,115 +247,64 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     );
   }
 
-  void _updateVisibleLayers() {
-    setState(() {
-      _polygons = [];
-      for (var layer in _layers) {
-        if (layer['visible']) {
-          _polygons
-              .addAll((layer['polygons'] as List).cast<Map<String, dynamic>>());
-        }
-      }
-    });
-  }
-
   /// Saves the current state to the undo stack
   void _saveState() {
     _undoStack.add(List<Map<String, dynamic>>.from(_polygons));
     _undoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
     _redoStack.clear();
     _redoHolesStack.clear();
-
-    // Save current state to the active layer
-    if (_currentLayerIndex >= 0 && _currentLayerIndex < _layers.length) {
-      _layers[_currentLayerIndex]['polygons'] =
-          List<Map<String, dynamic>>.from(_polygons);
-    }
   }
 
-  /// Updates the current drawing with the latest state
-  void _updateDrawingWithCurrentState() {
-    setState(() {
-      if (_isDrawingPolygon && _points.length >= 3) {
-        // Create a new color with the current opacity
-        final newColor = Color.fromARGB(
-          (_opacity * 255).round(),
-          _currentPolygonColor.red,
-          _currentPolygonColor.green,
-          _currentPolygonColor.blue,
-        );
-
-        // Remove any existing temporary polygon
-        if (_polygons.isNotEmpty && _polygons.last['isTemporary'] == true) {
-          _polygons.removeLast();
-        }
-
-        // Add the new temporary polygon
-        _polygons.add({
-          'points': List<Offset>.from(_points),
-          'color': newColor,
-          'isTemporary': true,
-        });
-        // Force rebuild of the canvas
-        _polygons = List<Map<String, dynamic>>.from(_polygons);
-        _holes = List<Map<String, dynamic>>.from(_holes);
-      } else if (_isDrawingHole && _holePoints.length >= 3) {
-        // Remove any existing temporary hole
-        if (_holes.isNotEmpty && _holes.last['isTemporary'] == true) {
-          _holes.removeLast();
-        }
-
-        // Add the new temporary hole
-        _holes.add({
-          'points': List<Offset>.from(_holePoints),
-          'color': Colors.transparent,
-          'isTemporary': true,
-        });
-        // Force rebuild of the canvas
-        _polygons = List<Map<String, dynamic>>.from(_polygons);
-        _holes = List<Map<String, dynamic>>.from(_holes);
-      }
-    });
-  }
-
-  /// Updates the opacity value and applies it to the current drawing
-  void _updateOpacity(double value) {
-    setState(() {
-      _opacity = value;
-      if (_selectedPolygonIndex != null) {
-        // Update the selected polygon's opacity
-        final currentColor =
-            _polygons[_selectedPolygonIndex!]['color'] as Color;
-        final newColor = Color.fromARGB(
-          (value * 255).round(),
-          currentColor.red,
-          currentColor.green,
-          currentColor.blue,
-        );
-        _polygons[_selectedPolygonIndex!]['color'] = newColor;
-      } else {
-        // Update the current drawing color
-        _currentPolygonColor = Color.fromARGB(
-          (value * 255).round(),
-          _currentPolygonColor.red,
-          _currentPolygonColor.green,
-          _currentPolygonColor.blue,
-        );
-        // Update any temporary drawing immediately
-        if (_isDrawingPolygon && _points.length >= 3) {
-          // Remove any existing temporary polygon
+  /// Finishes the current polygon or hole
+  void _finishPolygon() {
+    if (_points.length >= 3 || _holePoints.length >= 3) {
+      _saveState();
+      setState(() {
+        if (_isDrawingHole) {
+          // Remove temporary hole if exists
+          if (_holes.isNotEmpty && _holes.last['isTemporary'] == true) {
+            _holes.removeLast();
+          }
+          _holes.add({
+            'points': List<Offset>.from(_holePoints),
+            'color': Colors.transparent,
+          });
+          _holePoints.clear();
+          _isDrawingHole = false;
+        } else {
+          // Remove temporary polygon if exists
           if (_polygons.isNotEmpty && _polygons.last['isTemporary'] == true) {
             _polygons.removeLast();
           }
-          // Add the new temporary polygon with updated opacity
+
+          // Create a new color with the current opacity
+          final newColor = Color.fromARGB(
+            (_opacity * 255).round(),
+            _currentPolygonColor.red,
+            _currentPolygonColor.green,
+            _currentPolygonColor.blue,
+          );
+
+          // Use the stored color data if available
           _polygons.add({
             'points': List<Offset>.from(_points),
-            'color': _currentPolygonColor,
-            'isTemporary': true,
+            'color': newColor,
+            'colorNumber': _currentColorData?['number'] ?? 'Unknown',
+            'colorName': _currentColorData?['name'] ?? 'Unknown',
+            'category': _currentColorData?['category'] ?? 'Unknown',
+            'page': _currentColorData?['page'] ?? 'N/A',
+            'name': 'Wall ${_polygons.length + 1}',
           });
+          _points.clear();
+          _isDrawingPolygon = false;
+          // Clear the current color data after using it
+          _currentColorData = null;
         }
-      }
-    });
+        // Force rebuild of the canvas
+        _polygons = List<Map<String, dynamic>>.from(_polygons);
+        _holes = List<Map<String, dynamic>>.from(_holes);
+      });
+    }
   }
 
   /// Shows the color picker modal with favorite colors and opacity buttons
@@ -441,6 +344,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                     // Find the color in all color sets
                     Color color = Colors.black;
                     Map<String, dynamic>? colorData;
+                    String? foundCategory;
 
                     // Search through each color category
                     for (var category in _allColors.keys) {
@@ -449,6 +353,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                         for (var c in colors) {
                           if (c['number'] == colorNumber) {
                             colorData = c;
+                            foundCategory = category;
                             break;
                           }
                         }
@@ -460,7 +365,8 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                       final hexValue = colorData['value']?.toString() ?? '';
                       if (hexValue.isNotEmpty) {
                         color = _getColorFromHex(hexValue);
-                        print('Found color: $hexValue');
+                        print(
+                            'Found color: $hexValue in category: $foundCategory');
                       }
                     }
 
@@ -477,33 +383,33 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                             );
                             _polygons[_selectedPolygonIndex!]['color'] =
                                 newColor;
+                            // Store the color information
+                            _polygons[_selectedPolygonIndex!]['colorNumber'] =
+                                colorData?['number'];
+                            _polygons[_selectedPolygonIndex!]['colorName'] =
+                                colorData?['name'];
+                            _polygons[_selectedPolygonIndex!]['category'] =
+                                foundCategory;
+                            _polygons[_selectedPolygonIndex!]['page'] =
+                                colorData?['page'];
                             // Force rebuild of the canvas
                             _polygons =
                                 List<Map<String, dynamic>>.from(_polygons);
                           } else {
-                            // Update the current drawing color
-                            _currentPolygonColor = Color.fromARGB(
-                              (_opacity * 255).round(),
-                              color.red,
-                              color.green,
-                              color.blue,
-                            );
+                            // Update the current drawing color and store its information
+                            _currentPolygonColor = color;
+                            // Store the current color information for use in _finishPolygon
+                            _currentColorData = {
+                              'number': colorData?['number'],
+                              'name': colorData?['name'],
+                              'category': foundCategory,
+                              'page': colorData?['page'],
+                              'value': colorData?['value'],
+                            };
                           }
-                          _updateDrawingWithCurrentState();
+                          _finishPolygon();
                         });
                         Navigator.pop(context);
-                        // Force a UI update after a short delay
-                        Future.delayed(const Duration(milliseconds: 50), () {
-                          if (mounted) {
-                            setState(() {
-                              _finishPolygon();
-                              // Force a rebuild of the canvas
-                              _polygons =
-                                  List<Map<String, dynamic>>.from(_polygons);
-                              _holes = List<Map<String, dynamic>>.from(_holes);
-                            });
-                          }
-                        });
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -562,30 +468,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                                           _currentPolygonColor.green,
                                           _currentPolygonColor.blue,
                                         );
-                                        // Update any temporary drawing
-                                        if (_isDrawingPolygon &&
-                                            _points.length >= 3) {
-                                          _updateDrawingWithCurrentState();
-                                        }
                                       }
                                     });
-                                    Navigator.pop(context);
-                                    // Force a UI update after a short delay
-                                    Future.delayed(
-                                        const Duration(milliseconds: 50), () {
-                                      if (mounted) {
-                                        setState(() {
-                                          _finishPolygon();
-                                          // Force a rebuild of the canvas
-                                          _polygons =
-                                              List<Map<String, dynamic>>.from(
-                                                  _polygons);
-                                          _holes =
-                                              List<Map<String, dynamic>>.from(
-                                                  _holes);
-                                        });
-                                      }
-                                    });
+                                    _finishPolygon();
                                   },
                                   child: Container(
                                     width: 40,
@@ -655,29 +540,12 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                                   _currentPolygonColor.green,
                                   _currentPolygonColor.blue,
                                 );
-                                // Update any temporary drawing
-                                if (_isDrawingPolygon && _points.length >= 3) {
-                                  _updateDrawingWithCurrentState();
-                                }
                               }
                             });
                           },
                           onChangeEnd: (value) {
                             Navigator.pop(context);
-                            // Force a UI update after a short delay
-                            Future.delayed(const Duration(milliseconds: 50),
-                                () {
-                              if (mounted) {
-                                setState(() {
-                                  _finishPolygon();
-                                  // Force a rebuild of the canvas
-                                  _polygons = List<Map<String, dynamic>>.from(
-                                      _polygons);
-                                  _holes =
-                                      List<Map<String, dynamic>>.from(_holes);
-                                });
-                              }
-                            });
+                            _finishPolygon();
                           },
                         ),
                       ],
@@ -700,80 +568,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       _points.clear();
       _holePoints.clear();
     });
-  }
-
-  /// Finishes the current polygon or hole
-  void _finishPolygon() {
-    if (_points.length >= 3 || _holePoints.length >= 3) {
-      _saveState();
-      setState(() {
-        if (_isDrawingHole) {
-          // Remove temporary hole if exists
-          if (_holes.isNotEmpty && _holes.last['isTemporary'] == true) {
-            _holes.removeLast();
-          }
-          _holes.add({
-            'points': List<Offset>.from(_holePoints),
-            'color': Colors.transparent,
-          });
-          _holePoints.clear();
-          _isDrawingHole = false;
-          // Save to current layer
-          if (_currentLayerIndex >= 0 && _currentLayerIndex < _layers.length) {
-            _layers[_currentLayerIndex]['holes'] =
-                List<Map<String, dynamic>>.from(_holes);
-          }
-        } else {
-          // Remove temporary polygon if exists
-          if (_polygons.isNotEmpty && _polygons.last['isTemporary'] == true) {
-            _polygons.removeLast();
-          }
-          // Create a new color with the current opacity
-          final newColor = Color.fromARGB(
-            (_opacity * 255).round(),
-            _currentPolygonColor.red,
-            _currentPolygonColor.green,
-            _currentPolygonColor.blue,
-          );
-
-          // Find the color number for the current color
-          String? colorNumber;
-          for (var category in _allColors.keys) {
-            final colors = _allColors[category];
-            if (colors != null) {
-              for (var color in colors) {
-                if (color['value'] != null) {
-                  final hexColor = _getColorFromHex(color['value']);
-                  if (hexColor.red == _currentPolygonColor.red &&
-                      hexColor.green == _currentPolygonColor.green &&
-                      hexColor.blue == _currentPolygonColor.blue) {
-                    colorNumber = color['number'];
-                    break;
-                  }
-                }
-              }
-            }
-            if (colorNumber != null) break;
-          }
-
-          _polygons.add({
-            'points': List<Offset>.from(_points),
-            'color': newColor,
-            'colorNumber': colorNumber, // Store the color number
-          });
-          _points.clear();
-          _isDrawingPolygon = false;
-          // Save to current layer
-          if (_currentLayerIndex >= 0 && _currentLayerIndex < _layers.length) {
-            _layers[_currentLayerIndex]['polygons'] =
-                List<Map<String, dynamic>>.from(_polygons);
-          }
-        }
-        // Force rebuild of the canvas
-        _polygons = List<Map<String, dynamic>>.from(_polygons);
-        _holes = List<Map<String, dynamic>>.from(_holes);
-      });
-    }
   }
 
   /// Starts drawing a hole in the current polygon
@@ -830,86 +624,20 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             await decodeImageFromList(byteData.buffer.asUint8List());
         canvas.drawImage(originalImage, Offset.zero, Paint());
 
-        // Collect all unique colors used in polygons
-        Set<String> usedColorNumbers = {};
-        Map<String, Color> colorMap = {};
-
-        // First pass: collect all colors from polygons
-        for (var polygon in _polygons) {
-          if (polygon['color'] != null) {
-            final Color polygonColor = polygon['color'] as Color;
-            // Find matching color from color sets
-            for (var category in _allColors.keys) {
-              final colors = _allColors[category];
-              if (colors != null) {
-                for (var color in colors) {
-                  if (color['value'] != null) {
-                    final hexColor = _getColorFromHex(color['value']);
-                    // Compare RGB values (ignoring alpha)
-                    if (hexColor.red == polygonColor.red &&
-                        hexColor.green == polygonColor.green &&
-                        hexColor.blue == polygonColor.blue) {
-                      usedColorNumbers.add(color['number']);
-                      colorMap[color['number']] = hexColor;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        // Find color details for each used color
-        List<Map<String, dynamic>> colorDetails = [];
-        for (var colorNumber in usedColorNumbers) {
-          for (var category in _allColors.keys) {
-            final colors = _allColors[category];
-            if (colors != null) {
-              for (var color in colors) {
-                if (color['number'] == colorNumber) {
-                  colorDetails.add({
-                    'number': color['number'],
-                    'name': color['name'] ?? 'Unknown',
-                    'page': color['page'] ?? 'N/A',
-                    'category': category,
-                    'value': color['value'] ?? '#000000',
-                  });
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        // Sort color details by category and number
-        colorDetails.sort((a, b) {
-          int categoryCompare =
-              a['category'].toString().compareTo(b['category'].toString());
-          if (categoryCompare != 0) return categoryCompare;
-          return a['number'].toString().compareTo(b['number'].toString());
-        });
-
-        // Draw color information
-        final textPainter = TextPainter(
-          textDirection: TextDirection.ltr,
-          textAlign: TextAlign.left,
-        );
-
-        // Calculate the height needed for the color information
+        // Calculate the height needed for the walls information
         double yOffset = originalImage.height.toDouble();
         const double padding = 20.0;
         const double lineHeight = 30.0;
         const double colorBoxSize = 24.0;
 
-        // Draw white background for the color information section
+        // Draw white background for the walls information section
         final backgroundRect = Rect.fromLTWH(
           0,
           yOffset,
           originalImage.width.toDouble(),
-          (colorDetails.isEmpty
+          (_polygons.isEmpty
                   ? lineHeight * 3
-                  : colorDetails.length * lineHeight * 2.5 + lineHeight * 3)
+                  : _polygons.length * lineHeight * 3 + lineHeight * 3)
               .toDouble(),
         );
         canvas.drawRect(
@@ -918,8 +646,13 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         );
 
         // Draw header
+        final textPainter = TextPainter(
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.left,
+        );
+
         textPainter.text = TextSpan(
-          text: 'COLORS USED IN CANVAS:',
+          text: 'WALLS INFORMATION:',
           style: const TextStyle(
             color: Colors.black,
             fontSize: 24,
@@ -941,9 +674,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         );
         yOffset += lineHeight;
 
-        if (colorDetails.isEmpty) {
+        if (_polygons.isEmpty) {
           textPainter.text = TextSpan(
-            text: 'No specific colors were used in the canvas.',
+            text: 'No walls have been created in the canvas.',
             style: const TextStyle(
               color: Colors.black,
               fontSize: 16,
@@ -952,13 +685,16 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           textPainter.layout();
           textPainter.paint(canvas, Offset(padding, yOffset));
         } else {
-          // Draw color information with preview boxes
-          for (int i = 0; i < colorDetails.length; i++) {
-            final color = colorDetails[i];
-            final colorValue = color['value'] as String;
-            final previewColor = _getColorFromHex(colorValue);
+          // Draw walls information
+          for (int i = 0; i < _polygons.length; i++) {
+            final wall = _polygons[i];
+            final wallName = wall['name'] ?? 'Wall ${i + 1}';
+            final colorNumber = wall['colorNumber'] ?? 'Unknown';
+            final colorName = wall['colorName'] ?? 'Unknown';
+            final category = wall['category'] ?? 'Unknown';
+            final page = wall['page'] ?? 'N/A';
 
-            // Draw color preview box
+            // Draw wall color preview
             final colorBoxRect = Rect.fromLTWH(
               padding,
               yOffset + (lineHeight - colorBoxSize) / 2,
@@ -967,7 +703,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             );
             canvas.drawRect(
               colorBoxRect,
-              Paint()..color = previewColor,
+              Paint()..color = wall['color'] as Color,
             );
             canvas.drawRect(
               colorBoxRect,
@@ -977,9 +713,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                 ..strokeWidth = 1.0,
             );
 
-            // Draw color number and name
+            // Draw wall name and color information
             textPainter.text = TextSpan(
-              text: '${i + 1}. ${color['number']} - ${color['name']}',
+              text: '$wallName - $colorNumber ($colorName)',
               style: const TextStyle(
                 color: Colors.black,
                 fontSize: 16,
@@ -991,9 +727,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                 canvas, Offset(padding + colorBoxSize + 10, yOffset));
             yOffset += lineHeight;
 
-            // Draw category and page
+            // Draw category and page information
             textPainter.text = TextSpan(
-              text: '   Category: ${color['category']}, Page: ${color['page']}',
+              text: '   Category: $category, Page: $page',
               style: const TextStyle(
                 color: Colors.black,
                 fontSize: 14,
@@ -1068,6 +804,30 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     }
   }
 
+  /// Undoes the last action
+  void _undo() {
+    if (_undoStack.isNotEmpty) {
+      setState(() {
+        _redoStack.add(List<Map<String, dynamic>>.from(_polygons));
+        _redoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
+        _polygons = _undoStack.removeLast();
+        _holes = _undoHolesStack.removeLast();
+      });
+    }
+  }
+
+  /// Redoes the last undone action
+  void _redo() {
+    if (_redoStack.isNotEmpty) {
+      setState(() {
+        _undoStack.add(List<Map<String, dynamic>>.from(_polygons));
+        _undoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
+        _polygons = _redoStack.removeLast();
+        _holes = _redoHolesStack.removeLast();
+      });
+    }
+  }
+
   /// Builds the main UI of the drawing canvas
   @override
   Widget build(BuildContext context) {
@@ -1083,8 +843,18 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         title: const Text('Drawing Canvas'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.layers),
-            onPressed: _showLayersDialog,
+            icon: const Icon(Icons.undo),
+            onPressed: _undoStack.isEmpty ? null : _undo,
+            tooltip: 'Undo',
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            onPressed: _redoStack.isEmpty ? null : _redo,
+            tooltip: 'Redo',
+          ),
+          IconButton(
+            icon: const Icon(Icons.view_agenda),
+            onPressed: _showWallsDialog,
           ),
           IconButton(
             icon: const Icon(Icons.photo_library),
@@ -1160,23 +930,14 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                                   // Force rebuild of polygon points
                                   _points = List<Offset>.from(_points);
                                 }
-                                _updateDrawingWithCurrentState();
                               }
                             });
                           },
                           onTapUp: (details) {
-                            if (_isDrawingPolygon || _isDrawingHole) {
-                              setState(() {
-                                _updateDrawingWithCurrentState();
-                              });
-                            }
+                            // Remove automatic finishing of polygon
                           },
                           onTapCancel: () {
-                            if (_isDrawingPolygon || _isDrawingHole) {
-                              setState(() {
-                                _updateDrawingWithCurrentState();
-                              });
-                            }
+                            // Remove automatic finishing of polygon
                           },
                           child: CustomPaint(
                             painter: _DrawingPainter(
