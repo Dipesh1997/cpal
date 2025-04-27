@@ -241,47 +241,121 @@ class _ColorPalettePageState extends State<ColorPalettePage>
               )),
         );
 
-        // Normalize the search query by removing spaces and special characters
-        String normalizedQuery =
-            query.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        // Normalize the search query
+        String normalizedQuery = query.toLowerCase().trim();
+        debugPrint('Searching for: $normalizedQuery');
 
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) {
             final allCategoryColors = (entry.value as List);
+            debugPrint(
+                'Processing ${entry.key} category with ${allCategoryColors.length} colors');
+
             final filteredCategoryColors = allCategoryColors.where((color) {
               try {
                 if (entry.key.toLowerCase() == 'ncs') {
-                  // For NCS colors, check both number and value
                   String number = (color['number'] ?? '').toString();
                   String value = (color['value'] ?? '').toString();
                   String name = (color['name'] ?? '').toString();
 
-                  // Normalize the number for comparison
-                  String normalizedNumber =
-                      number.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-                  String normalizedValue = value.toLowerCase();
-                  String normalizedName = name.toLowerCase();
+                  debugPrint('Checking NCS color: $number');
 
-                  return normalizedNumber.contains(normalizedQuery) ||
-                      normalizedValue.contains(query.toLowerCase()) ||
-                      normalizedName.contains(query.toLowerCase()) ||
-                      // Also check original number for exact matches with spaces/special chars
-                      number.toLowerCase().contains(query.toLowerCase());
+                  // Create variations of the color number for matching
+                  List<String> variations = [
+                    number.toLowerCase(),
+                    number.toLowerCase().replaceAll('-', ''),
+                    number.toLowerCase().replaceAll(' ', ''),
+                  ];
+
+                  // For NCS colors, also try matching parts of the number
+                  if (number.contains('-')) {
+                    List<String> parts = number.split('-');
+                    if (parts.length > 1) {
+                      variations.addAll([
+                        parts[0].toLowerCase(),
+                        parts[1].toLowerCase(),
+                        parts.join('').toLowerCase(),
+                      ]);
+                    }
+                  }
+
+                  // Also try matching with and without the 'S' prefix
+                  if (number.startsWith('S')) {
+                    variations.add(number.substring(1).toLowerCase());
+                  } else {
+                    variations.add('s${number.toLowerCase()}');
+                  }
+
+                  // For NCS numbers, also try matching the numeric part separately
+                  RegExp numericPart = RegExp(r'\d+');
+                  Iterable<RegExpMatch> numericMatches =
+                      numericPart.allMatches(number);
+                  for (var match in numericMatches) {
+                    variations.add(match.group(0)!.toLowerCase());
+                  }
+
+                  // Debug print all variations being checked
+                  debugPrint('Checking variations: ${variations.join(', ')}');
+
+                  // Check if any variation matches the query
+                  bool isMatch = false;
+
+                  // Try exact matches first
+                  isMatch = variations.any((variation) =>
+                      variation == normalizedQuery ||
+                      variation.contains(normalizedQuery) ||
+                      normalizedQuery.contains(variation));
+
+                  // If no exact match, try partial matches
+                  if (!isMatch) {
+                    isMatch = variations.any((variation) {
+                      // Check if the query is a substring of any variation
+                      bool queryInVariation =
+                          variation.contains(normalizedQuery);
+                      // Check if any variation is a substring of the query
+                      bool variationInQuery =
+                          normalizedQuery.contains(variation);
+
+                      if (queryInVariation || variationInQuery) {
+                        debugPrint(
+                            'Found partial match: $variation matches $normalizedQuery');
+                      }
+                      return queryInVariation || variationInQuery;
+                    });
+                  }
+
+                  // Also check value and name
+                  isMatch = isMatch ||
+                      value.toLowerCase().contains(normalizedQuery) ||
+                      name.toLowerCase().contains(normalizedQuery);
+
+                  if (isMatch) {
+                    debugPrint('Found match for NCS color: $number');
+                  }
+
+                  return isMatch;
                 } else {
                   // For other colors, safely check name and number
                   String name = (color['name'] ?? '').toString();
                   String number = (color['number'] ?? '').toString();
                   String value = (color['value'] ?? '').toString();
 
-                  return name.toLowerCase().contains(query.toLowerCase()) ||
-                      number.toLowerCase().contains(query.toLowerCase()) ||
-                      value.toLowerCase().contains(query.toLowerCase());
+                  return name.toLowerCase().contains(normalizedQuery) ||
+                      number.toLowerCase().contains(normalizedQuery) ||
+                      value.toLowerCase().contains(normalizedQuery);
                 }
               } catch (e) {
                 debugPrint('Error filtering color: $e');
                 return false;
               }
             }).toList();
+
+            debugPrint(
+                '${entry.key} results: ${filteredCategoryColors.length}');
+            if (filteredCategoryColors.isNotEmpty) {
+              debugPrint(
+                  'First result: ${filteredCategoryColors.first['number']}');
+            }
 
             return MapEntry(entry.key, filteredCategoryColors);
           }),
