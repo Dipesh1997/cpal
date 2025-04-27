@@ -470,18 +470,7 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
   Future<void> _loadColors() async {
     if (widget.initialColors != null) {
       colors = widget.initialColors!;
-    } else {
-      // Load colors from asset
-      try {
-        final String jsonString = await DefaultAssetBundle.of(context)
-            .loadString('assets/colors.json');
-        final Map<String, dynamic> jsonData = json.decode(jsonString);
-        colors = Map<String, List<dynamic>>.from(jsonData);
-      } catch (e) {
-        print('Error loading colors: $e');
-      }
     }
-    setState(() {});
   }
 
   @override
