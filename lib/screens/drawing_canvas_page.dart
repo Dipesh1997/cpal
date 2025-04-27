@@ -902,6 +902,21 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         const double lineHeight = 30.0;
         const double colorBoxSize = 24.0;
 
+        // Draw white background for the color information section
+        final backgroundRect = Rect.fromLTWH(
+          0,
+          yOffset,
+          originalImage.width.toDouble(),
+          (colorDetails.isEmpty
+                  ? lineHeight * 3
+                  : colorDetails.length * lineHeight * 2.5 + lineHeight * 3)
+              .toDouble(),
+        );
+        canvas.drawRect(
+          backgroundRect,
+          Paint()..color = Colors.white,
+        );
+
         // Draw header
         textPainter.text = TextSpan(
           text: 'COLORS USED IN CANVAS:',
