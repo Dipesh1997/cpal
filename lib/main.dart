@@ -14,8 +14,12 @@ import 'opuscolors.dart';
 import 'ncscolors.dart';
 import 'woodcolors.dart';
 import 'dart:math' as math;
+import 'services/ad_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdService.initialize();
   runApp(const MyApp());
 }
 
@@ -74,7 +78,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   void initState() {
     super.initState();
     loadColorsAndFavorites();
-    _mainTabController = TabController(length: 3, vsync: this);
+    _mainTabController =
+        TabController(length: 1, vsync: this); // Initialize with length 1
     _mainTabController.addListener(_handleMainTabChange);
     _loadFavorites();
   }
@@ -93,6 +98,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     if (_mainTabController.indexIsChanging) {
       setState(() {
         _currentTabIndex = _mainTabController.index;
+        // Clear caches when switching tabs
+        _tabViewCache.clear();
+        _asianTabViewCache.clear();
       });
     }
   }
@@ -281,8 +289,17 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       }
     });
 
-    // After filtering, preload the tab views with the new filtered results
-    _preloadTabViews();
+    // Clear the tab view cache when search query changes
+    _tabViewCache.clear();
+    _asianTabViewCache.clear();
+
+    // Force rebuild of the current tab view
+    if (mounted) {
+      setState(() {
+        // Update the current tab index to force a rebuild
+        _currentTabIndex = _mainTabController.index;
+      });
+    }
   }
 
   Color hexToColor(String hexString) {
@@ -737,13 +754,15 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
   // Update _getCachedTabView to handle search results
   Widget _getCachedTabView(int index) {
-    // For search results, always build fresh views
+    // Always build fresh views for search results
     if (searchQuery.isNotEmpty) {
       switch (index) {
         case 0:
           return _buildAsianTabView();
         case 1:
           return OpusTabView(
+            key: ValueKey(
+                'opus_${searchQuery}_${DateTime.now().millisecondsSinceEpoch}'),
             colors: filteredColors['opus'] ?? [],
             onFavoriteToggle: toggleFavorite,
             favoriteColorNumbers: _favoriteColors,
@@ -752,6 +771,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           );
         case 2:
           return NCSTabView(
+            key: ValueKey(
+                'ncs_${searchQuery}_${DateTime.now().millisecondsSinceEpoch}'),
             colors: filteredColors['ncs'] ?? [],
             onFavoriteToggle: toggleFavorite,
             favoriteColorNumbers: _favoriteColors,
@@ -817,6 +838,15 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     // Check NCS tab
     if ((filteredColors['ncs'] ?? []).isNotEmpty) {
       visibleTabs.add(const Tab(text: 'NCS'));
+    }
+
+    // Update tab controller length if needed
+    if (_mainTabController.length != visibleTabs.length) {
+      _mainTabController.removeListener(_handleMainTabChange);
+      _mainTabController.dispose();
+      _mainTabController =
+          TabController(length: visibleTabs.length, vsync: this);
+      _mainTabController.addListener(_handleMainTabChange);
     }
 
     return Scaffold(
@@ -1633,6 +1663,27 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Add banner ad
+            Container(
+              alignment: Alignment.center,
+              width: double.infinity,
+              height: 50,
+              child: AdWidget(
+                ad: BannerAd(
+                  adUnitId: 'ca-app-pub-6710120263757804/9278492126',
+                  size: AdSize.banner,
+                  request: const AdRequest(),
+                  listener: BannerAdListener(
+                    onAdLoaded: (ad) => debugPrint('Banner ad loaded.'),
+                    onAdFailedToLoad: (ad, error) {
+                      ad.dispose();
+                      debugPrint('Banner ad failed to load: $error');
+                    },
+                  ),
+                )..load(),
               ),
             ),
           ],
