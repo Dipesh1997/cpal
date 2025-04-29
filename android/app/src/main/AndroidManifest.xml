@@ -36,6 +36,30 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+            <meta-data
+                android:name="com.google.android.gms.ads.APPLICATION_ID"
+                android:value="ca-app-pub-6710120263757804~9278492126"/>
+            <meta-data
+                android:name="io.flutter.embedding.android.SplashScreenDrawable"
+                android:resource="@drawable/launch_background" />
+            <meta-data
+                android:name="android.window.splashscreen.background"
+                android:value="@color/ic_launcher_background" />
+            <meta-data
+                android:name="android.window.splashscreen.animatedIcon"
+                android:resource="@mipmap/ic_launcher" />
+            <meta-data
+                android:name="android.window.splashscreen.iconBackgroundColor"
+                android:value="@color/ic_launcher_background" />
+            <meta-data
+                android:name="android.window.splashscreen.postSplashScreenTheme"
+                android:resource="@style/Theme.AppCompat.Light.NoActionBar" />
+            <meta-data
+                android:name="android.window.splashscreen.iconSize"
+                android:value="match_parent" />
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

@@ -5,24 +5,29 @@ import 'color_detail_page.dart';
 import 'favorites_page.dart';
 import 'screens/color_picker_page.dart';
 import 'screens/drawing_canvas_page.dart';
+import 'screens/color_table_page.dart';
 import 'lightcolors.dart';
 import 'mediumcolors.dart';
 import 'darkcolors.dart';
 import 'sacolors.dart';
 import 'svcolors.dart';
 import 'opuscolors.dart';
-import 'ncscolors.dart';
 import 'woodcolors.dart';
+import 'ncscolors.dart';
 import 'dart:math' as math;
 import 'services/ad_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+// Main entry point for the Color Palette application
+// Initializes the app and sets up required services
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AdService.initialize();
   runApp(const MyApp());
 }
 
+/// Root widget of the application
+/// Sets up the MaterialApp with theme and initial route
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -40,6 +45,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Main page of the Color Palette application
+/// Handles color display, searching, filtering, and tab management
 class ColorPalettePage extends StatefulWidget {
   const ColorPalettePage({super.key});
 
@@ -47,16 +54,29 @@ class ColorPalettePage extends StatefulWidget {
   State<ColorPalettePage> createState() => _ColorPalettePageState();
 }
 
+/// State class for ColorPalettePage
+/// Manages the complex state of the color palette including:
+/// - Color data loading and caching
+/// - Search functionality
+/// - Tab management
+/// - Favorites system
 class _ColorPalettePageState extends State<ColorPalettePage>
     with TickerProviderStateMixin {
+  // Color data and search state
   late Map<String, List<dynamic>> colors;
   String searchQuery = '';
   Map<String, List<dynamic>> filteredColors = {};
   late SharedPreferences prefs;
   bool isLoading = true;
+
+  // Tab controllers
   late TabController _mainTabController;
   TabController? _asianTabController;
+
+  // Favorites management
   Set<String> _favoriteColors = {};
+
+  // Lazy loading configuration
   Map<String, int> _loadedItemsCount = {
     'light': 20,
     'medium': 20,
@@ -64,26 +84,34 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     'opus': 20,
     'SA': 20,
     'SV': 20,
-    'ncs': 20,
   };
-  final Map<String, Color> _colorCache = {};
 
-  // Add cache for tab views and their content
+  // Cache management
+  final Map<String, Color> _colorCache = {};
   final Map<int, Widget> _tabViewCache = {};
   final Map<String, Widget> _asianTabViewCache = {};
   bool _isPreloading = false;
   int _currentTabIndex = 0;
 
+  // Preloaded colors for ColorTablePage
+  static Map<String, List<dynamic>>? _preloadedTableColors;
+
+  /// Initializes the state
+  /// Sets up controllers, loads colors and favorites
   @override
   void initState() {
     super.initState();
     loadColorsAndFavorites();
-    _mainTabController =
-        TabController(length: 1, vsync: this); // Initialize with length 1
+    _mainTabController = TabController(length: 1, vsync: this);
     _mainTabController.addListener(_handleMainTabChange);
     _loadFavorites();
+
+    // Preload colors for ColorTablePage in the background
+    _preloadTableColors();
   }
 
+  /// Cleans up resources when the widget is disposed
+  /// Removes listeners and clears caches
   @override
   void dispose() {
     _mainTabController.removeListener(_handleMainTabChange);
@@ -94,24 +122,26 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     super.dispose();
   }
 
+  /// Handles tab changes in the main tab controller
+  /// Clears caches when switching tabs to ensure fresh data
   void _handleMainTabChange() {
     if (_mainTabController.indexIsChanging) {
       setState(() {
         _currentTabIndex = _mainTabController.index;
-        // Clear caches when switching tabs
         _tabViewCache.clear();
         _asianTabViewCache.clear();
       });
     }
   }
 
-  // Add method to preload all tab views
+  /// Preloads all tab views to improve performance
+  /// Caches Asian and Opus tab views
   Future<void> _preloadTabViews() async {
     if (_isPreloading) return;
     _isPreloading = true;
 
     // Preload Asian tab views
-    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV', 'wood'];
+    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV'];
     for (var tab in asianTabs) {
       if ((filteredColors[tab] ?? []).isNotEmpty) {
         _asianTabViewCache[tab] = _buildColorGrid(tab);
@@ -125,17 +155,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         onFavoriteToggle: toggleFavorite,
         favoriteColorNumbers: _favoriteColors,
         filteredColors: filteredColors,
-        hexToColor: hexToColor,
-      );
-    }
-
-    // Preload NCS tab view
-    if ((filteredColors['ncs'] ?? []).isNotEmpty) {
-      _tabViewCache[2] = NCSTabView(
-        colors: filteredColors['ncs'] ?? [],
-        onFavoriteToggle: toggleFavorite,
-        favoriteColorNumbers: _favoriteColors,
-        filteredColors: filteredColors,
+        allColors: colors,
         hexToColor: hexToColor,
       );
     }
@@ -143,25 +163,31 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     _isPreloading = false;
   }
 
+  /// Implements lazy loading functionality
+  /// Loads more items for a specific category when needed
   void _loadMoreItems(String category) {
     setState(() {
       _loadedItemsCount[category] = (_loadedItemsCount[category] ?? 0) + 20;
     });
   }
 
+  /// Loads both colors and favorites data
+  /// Initializes the app's data and preloads views
   Future<void> loadColorsAndFavorites() async {
     setState(() {
       isLoading = true;
     });
 
     await _loadColors();
-    await _preloadTabViews(); // Preload all tab views after loading colors
+    await _preloadTabViews();
 
     setState(() {
       isLoading = false;
     });
   }
 
+  /// Loads color data from all color categories
+  /// Initializes both colors and filteredColors maps
   Future<void> _loadColors() async {
     try {
       setState(() {
@@ -172,8 +198,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           'SA': SaColors.colors,
           'SV': SvColors.colors,
           'opus': OpusColors.colors,
-          'ncs': NcsColors.colors,
-          'wood': WoodColors.colors,
         };
         // Initialize filteredColors with all colors
         filteredColors = Map.fromEntries(
@@ -184,10 +208,12 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         );
       });
     } catch (e) {
-      print('Error loading colors: $e');
+      // Error loading colors
     }
   }
 
+  /// Loads favorite colors from SharedPreferences
+  /// Initializes the _favoriteColors set with saved favorites
   Future<void> _loadFavorites() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -196,10 +222,13 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         _favoriteColors = favorites.toSet();
       });
     } catch (e) {
-      print('Error loading favorites: $e');
+      // Error loading favorites
     }
   }
 
+  /// Toggles a color's favorite status
+  /// Saves the updated favorites list to SharedPreferences
+  /// @param colorNumber The unique identifier of the color to toggle
   Future<void> toggleFavorite(String colorNumber) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -214,17 +243,24 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         _favoriteColors = favorites.toSet();
       });
     } catch (e) {
-      print('Error toggling favorite: $e');
+      // Error toggling favorite
     }
   }
 
+  /// Checks if a color is marked as favorite
+  /// @param colorNumber The unique identifier of the color to check
+  /// @return bool True if the color is in favorites
   bool isFavorite(String colorNumber) {
     return _favoriteColors.contains(colorNumber);
   }
 
+  /// Filters colors based on search query
+  /// Updates filteredColors map with matching results
+  /// @param query The search string to filter colors by
   void filterColors(String query) {
     setState(() {
       searchQuery = query;
+
       if (query.isEmpty) {
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) => MapEntry(
@@ -243,119 +279,30 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
         // Normalize the search query
         String normalizedQuery = query.toLowerCase().trim();
-        debugPrint('Searching for: $normalizedQuery');
 
+        // Standard filtering approach for all tabs
         filteredColors = Map.fromEntries(
           colors.entries.map((entry) {
             final allCategoryColors = (entry.value as List);
-            debugPrint(
-                'Processing ${entry.key} category with ${allCategoryColors.length} colors');
 
             final filteredCategoryColors = allCategoryColors.where((color) {
               try {
-                if (entry.key.toLowerCase() == 'ncs') {
-                  String number = (color['number'] ?? '').toString();
-                  String value = (color['value'] ?? '').toString();
-                  String name = (color['name'] ?? '').toString();
+                String name = (color['name'] ?? '').toString();
+                String number = (color['number'] ?? '').toString();
+                String value = (color['value'] ?? '').toString();
 
-                  debugPrint('Checking NCS color: $number');
+                bool nameMatch = name.toLowerCase().contains(normalizedQuery);
+                bool numberMatch =
+                    number.toLowerCase().contains(normalizedQuery);
+                bool valueMatch = value.toLowerCase().contains(normalizedQuery);
 
-                  // Create variations of the color number for matching
-                  List<String> variations = [
-                    number.toLowerCase(),
-                    number.toLowerCase().replaceAll('-', ''),
-                    number.toLowerCase().replaceAll(' ', ''),
-                  ];
+                bool isMatch = nameMatch || numberMatch || valueMatch;
 
-                  // For NCS colors, also try matching parts of the number
-                  if (number.contains('-')) {
-                    List<String> parts = number.split('-');
-                    if (parts.length > 1) {
-                      variations.addAll([
-                        parts[0].toLowerCase(),
-                        parts[1].toLowerCase(),
-                        parts.join('').toLowerCase(),
-                      ]);
-                    }
-                  }
-
-                  // Also try matching with and without the 'S' prefix
-                  if (number.startsWith('S')) {
-                    variations.add(number.substring(1).toLowerCase());
-                  } else {
-                    variations.add('s${number.toLowerCase()}');
-                  }
-
-                  // For NCS numbers, also try matching the numeric part separately
-                  RegExp numericPart = RegExp(r'\d+');
-                  Iterable<RegExpMatch> numericMatches =
-                      numericPart.allMatches(number);
-                  for (var match in numericMatches) {
-                    variations.add(match.group(0)!.toLowerCase());
-                  }
-
-                  // Debug print all variations being checked
-                  debugPrint('Checking variations: ${variations.join(', ')}');
-
-                  // Check if any variation matches the query
-                  bool isMatch = false;
-
-                  // Try exact matches first
-                  isMatch = variations.any((variation) =>
-                      variation == normalizedQuery ||
-                      variation.contains(normalizedQuery) ||
-                      normalizedQuery.contains(variation));
-
-                  // If no exact match, try partial matches
-                  if (!isMatch) {
-                    isMatch = variations.any((variation) {
-                      // Check if the query is a substring of any variation
-                      bool queryInVariation =
-                          variation.contains(normalizedQuery);
-                      // Check if any variation is a substring of the query
-                      bool variationInQuery =
-                          normalizedQuery.contains(variation);
-
-                      if (queryInVariation || variationInQuery) {
-                        debugPrint(
-                            'Found partial match: $variation matches $normalizedQuery');
-                      }
-                      return queryInVariation || variationInQuery;
-                    });
-                  }
-
-                  // Also check value and name
-                  isMatch = isMatch ||
-                      value.toLowerCase().contains(normalizedQuery) ||
-                      name.toLowerCase().contains(normalizedQuery);
-
-                  if (isMatch) {
-                    debugPrint('Found match for NCS color: $number');
-                  }
-
-                  return isMatch;
-                } else {
-                  // For other colors, safely check name and number
-                  String name = (color['name'] ?? '').toString();
-                  String number = (color['number'] ?? '').toString();
-                  String value = (color['value'] ?? '').toString();
-
-                  return name.toLowerCase().contains(normalizedQuery) ||
-                      number.toLowerCase().contains(normalizedQuery) ||
-                      value.toLowerCase().contains(normalizedQuery);
-                }
+                return isMatch;
               } catch (e) {
-                debugPrint('Error filtering color: $e');
                 return false;
               }
             }).toList();
-
-            debugPrint(
-                '${entry.key} results: ${filteredCategoryColors.length}');
-            if (filteredCategoryColors.isNotEmpty) {
-              debugPrint(
-                  'First result: ${filteredCategoryColors.first['number']}');
-            }
 
             return MapEntry(entry.key, filteredCategoryColors);
           }),
@@ -376,6 +323,10 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     }
   }
 
+  /// Converts a hex color string to a Color object
+  /// Uses caching to improve performance
+  /// @param hexString The hex color code to convert
+  /// @return Color The corresponding Flutter Color object
   Color hexToColor(String hexString) {
     if (_colorCache.containsKey(hexString)) {
       return _colorCache[hexString]!;
@@ -391,6 +342,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     return color;
   }
 
+  /// Builds a color grid for a specific category
+  /// Organizes colors by page and displays them in a grid layout
+  /// @param category The category of colors to display
   Widget _buildColorGrid(String category) {
     try {
       final categoryColors = filteredColors[category] ?? [];
@@ -419,7 +373,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           }
           colorsByPage[page]!.add(color);
         } catch (e) {
-          debugPrint('Error processing page number: $e');
           // Add to page 206 if there's an error
           if (!colorsByPage.containsKey(206)) {
             colorsByPage[206] = [];
@@ -497,8 +450,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                                   ),
                                 );
                               } catch (e) {
-                                debugPrint(
-                                    'Error navigating to color detail: $e');
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
@@ -536,7 +487,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                           ),
                         );
                       } catch (e) {
-                        debugPrint('Error building color card: $e');
                         return const SizedBox.shrink();
                       }
                     },
@@ -544,14 +494,12 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 ],
               );
             } catch (e) {
-              debugPrint('Error building page $pageIndex: $e');
               return const SizedBox.shrink();
             }
           },
         ),
       );
     } catch (e) {
-      debugPrint('Error in color grid: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -565,209 +513,11 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     }
   }
 
-  Widget _buildNCSColorGrid(String category) {
-    try {
-      List<dynamic> categoryColors = filteredColors[category] ?? [];
-
-      // If no colors, return empty container
-      if (categoryColors.isEmpty) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'No NCS colors found matching your search',
-              style: TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-      }
-
-      // Group colors by page number
-      Map<int, List<dynamic>> colorsByPage = {};
-      for (var color in categoryColors) {
-        try {
-          int page = int.tryParse(color['page']?.toString() ?? '300') ?? 300;
-          if (!colorsByPage.containsKey(page)) {
-            colorsByPage[page] = [];
-          }
-          colorsByPage[page]!.add(color);
-        } catch (e) {
-          debugPrint('Error processing page number: $e');
-          // Add to page 300 if there's an error
-          if (!colorsByPage.containsKey(300)) {
-            colorsByPage[300] = [];
-          }
-          colorsByPage[300]!.add(color);
-        }
-      }
-
-      // Sort pages by page number
-      List<int> sortedPages = colorsByPage.keys.toList()..sort();
-
-      return SingleChildScrollView(
-        child: ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(8),
-          itemCount: sortedPages.length,
-          itemBuilder: (context, pageIndex) {
-            try {
-              if (pageIndex >= sortedPages.length) {
-                return const SizedBox.shrink();
-              }
-
-              final pageNumber = sortedPages[pageIndex];
-              final pageColors = colorsByPage[pageNumber]!;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'Page $pageNumber',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.5,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: pageColors.length,
-                    itemBuilder: (context, index) {
-                      try {
-                        if (index >= pageColors.length) {
-                          return const SizedBox.shrink();
-                        }
-
-                        var color = pageColors[index];
-                        return Card(
-                          elevation: 4,
-                          child: InkWell(
-                            onTap: () {
-                              try {
-                                if (color['value'] == null ||
-                                    color['page'] == null ||
-                                    color['position'] == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Color details not available yet'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ColorDetailPage(
-                                      color: {
-                                        ...color,
-                                        'tab': category,
-                                      },
-                                      onFavoriteToggle: toggleFavorite,
-                                      isFavorite: isFavorite(color['number']),
-                                      allColors: filteredColors,
-                                    ),
-                                  ),
-                                );
-                              } catch (e) {
-                                debugPrint(
-                                    'Error navigating to color detail: $e');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Error loading color details'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: color['value'] != null
-                                            ? hexToColor(color['value'])
-                                            : Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    color['number'] ?? 'Coming Soon',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (color['value'] == null ||
-                                      color['page'] == null ||
-                                      color['position'] == null)
-                                    const Text(
-                                      'Coming Soon',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      } catch (e) {
-                        debugPrint('Error building color card: $e');
-                        return const SizedBox.shrink();
-                      }
-                    },
-                  ),
-                ],
-              );
-            } catch (e) {
-              debugPrint('Error building page $pageIndex: $e');
-              return const SizedBox.shrink();
-            }
-          },
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error in NCS color grid: $e');
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Error loading NCS colors. Please try again.',
-            style: TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-  }
-
-  // Update _buildAsianTabView to properly handle search results
+  /// Builds the Asian tab view with sub-tabs
+  /// Handles visibility of Asian color categories based on search results
   Widget _buildAsianTabView() {
     try {
-      List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV', 'wood'];
+      List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV'];
       List<String> visibleTabs = [];
 
       // Only show tabs that have search results
@@ -812,7 +562,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         ),
       );
     } catch (e) {
-      debugPrint('Error in Asian tab view: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -826,7 +575,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     }
   }
 
-  // Update _getCachedTabView to handle search results
+  /// Gets or creates a cached tab view for the given index
+  /// Handles search results differently by always building fresh views
+  /// @param index The tab index to get the view for
   Widget _getCachedTabView(int index) {
     // Always build fresh views for search results
     if (searchQuery.isNotEmpty) {
@@ -841,16 +592,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             onFavoriteToggle: toggleFavorite,
             favoriteColorNumbers: _favoriteColors,
             filteredColors: filteredColors,
-            hexToColor: hexToColor,
-          );
-        case 2:
-          return NCSTabView(
-            key: ValueKey(
-                'ncs_${searchQuery}_${DateTime.now().millisecondsSinceEpoch}'),
-            colors: filteredColors['ncs'] ?? [],
-            onFavoriteToggle: toggleFavorite,
-            favoriteColorNumbers: _favoriteColors,
-            filteredColors: filteredColors,
+            allColors: colors,
             hexToColor: hexToColor,
           );
       }
@@ -868,15 +610,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             onFavoriteToggle: toggleFavorite,
             favoriteColorNumbers: _favoriteColors,
             filteredColors: filteredColors,
-            hexToColor: hexToColor,
-          );
-          break;
-        case 2:
-          _tabViewCache[index] = NCSTabView(
-            colors: filteredColors['ncs'] ?? [],
-            onFavoriteToggle: toggleFavorite,
-            favoriteColorNumbers: _favoriteColors,
-            filteredColors: filteredColors,
+            allColors: colors,
             hexToColor: hexToColor,
           );
           break;
@@ -885,6 +619,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     return _tabViewCache[index]!;
   }
 
+  /// Main build method for the ColorPalettePage
+  /// Sets up the app bar, search box, and tab views
   @override
   Widget build(BuildContext context) {
     // Determine which main tabs have results
@@ -893,7 +629,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
     // Check Asian tabs
     bool hasAsianResults = false;
-    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV', 'wood'];
+    List<String> asianTabs = ['light', 'medium', 'dark', 'SA', 'SV'];
     for (var tab in asianTabs) {
       if ((filteredColors[tab] ?? []).isNotEmpty) {
         hasAsianResults = true;
@@ -907,11 +643,6 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     // Check Opus tab - only show if there are Opus results
     if ((filteredColors['opus'] ?? []).isNotEmpty) {
       visibleTabs.add(const Tab(text: 'OPUS'));
-    }
-
-    // Check NCS tab - only show if there are NCS results
-    if ((filteredColors['ncs'] ?? []).isNotEmpty) {
-      visibleTabs.add(const Tab(text: 'NCS'));
     }
 
     // Update tab controller length if needed
@@ -938,6 +669,17 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           },
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.chair_alt_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ColorTablePage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
@@ -983,18 +725,24 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search colors by name, number, or value...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                  filterColors(value);
-                });
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search colors by name, number, or value...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                        filterColors(value);
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
           if (visibleTabs.isNotEmpty) ...[
@@ -1020,19 +768,11 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                             onFavoriteToggle: toggleFavorite,
                             favoriteColorNumbers: _favoriteColors,
                             filteredColors: filteredColors,
-                            hexToColor: hexToColor,
-                          );
-                        } else {
-                          return NCSTabView(
-                            key: ValueKey(
-                                'ncs_${searchQuery}_${DateTime.now().millisecondsSinceEpoch}'),
-                            colors: filteredColors['ncs'] ?? [],
-                            onFavoriteToggle: toggleFavorite,
-                            favoriteColorNumbers: _favoriteColors,
-                            filteredColors: filteredColors,
+                            allColors: colors,
                             hexToColor: hexToColor,
                           );
                         }
+                        return const SizedBox.shrink();
                       }),
                     ),
             ),
@@ -1049,20 +789,42 @@ class _ColorPalettePageState extends State<ColorPalettePage>
       ),
     );
   }
+
+  /// Preloads colors for the ColorTablePage in the background
+  Future<void> _preloadTableColors() async {
+    if (_preloadedTableColors != null) return;
+
+    try {
+      _preloadedTableColors = {
+        'asian': WoodColors.colors,
+        'ncs': NcsColors.colors,
+      };
+    } catch (e) {
+      // Error preloading colors for ColorTablePage
+    }
+  }
+
+  /// Gets the preloaded colors for ColorTablePage
+  static Map<String, List<dynamic>>? getPreloadedTableColors() {
+    return _preloadedTableColors;
+  }
 }
 
+/// Extension to add string capitalization functionality
 extension StringExtension on String {
   String capitalize() {
     return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
 
-// Add OpusTabView widget class
+/// Widget for displaying Opus colors in a grid
+/// Handles color organization, filtering, and lazy loading
 class OpusTabView extends StatefulWidget {
   final List<dynamic> colors;
   final Function(String) onFavoriteToggle;
   final Set<String> favoriteColorNumbers;
   final Map<String, List<dynamic>> filteredColors;
+  final Map<String, List<dynamic>> allColors;
   final Function(String) hexToColor;
 
   const OpusTabView({
@@ -1071,6 +833,7 @@ class OpusTabView extends StatefulWidget {
     required this.onFavoriteToggle,
     required this.favoriteColorNumbers,
     required this.filteredColors,
+    required this.allColors,
     required this.hexToColor,
   }) : super(key: key);
 
@@ -1078,28 +841,8 @@ class OpusTabView extends StatefulWidget {
   State<OpusTabView> createState() => _OpusTabViewState();
 }
 
-// Add NCSTabView widget class
-class NCSTabView extends StatefulWidget {
-  final List<dynamic> colors;
-  final Function(String) onFavoriteToggle;
-  final Set<String> favoriteColorNumbers;
-  final Map<String, List<dynamic>> filteredColors;
-  final Function(String) hexToColor;
-
-  const NCSTabView({
-    Key? key,
-    required this.colors,
-    required this.onFavoriteToggle,
-    required this.favoriteColorNumbers,
-    required this.filteredColors,
-    required this.hexToColor,
-  }) : super(key: key);
-
-  @override
-  State<NCSTabView> createState() => _NCSTabViewState();
-}
-
-// Update OpusTabView to implement lazy loading
+/// State class for OpusTabView
+/// Manages the display and organization of Opus colors
 class _OpusTabViewState extends State<OpusTabView>
     with TickerProviderStateMixin {
   late TabController _subTabController;
@@ -1109,12 +852,14 @@ class _OpusTabViewState extends State<OpusTabView>
   final String _defaultCategory = 'WW';
   final Map<int, Widget> _pageCache = {};
 
+  /// Initializes the state and categorizes colors
   @override
   void initState() {
     super.initState();
     _categorizeColors();
   }
 
+  /// Cleans up resources when the widget is disposed
   @override
   void dispose() {
     _subTabController.dispose();
@@ -1122,6 +867,8 @@ class _OpusTabViewState extends State<OpusTabView>
     super.dispose();
   }
 
+  /// Organizes colors into categories based on their number prefix
+  /// Sets up the tab controller for category navigation
   void _categorizeColors() {
     // Initialize with "All" category
     _categorizedColors = {'All': widget.colors};
@@ -1178,12 +925,15 @@ class _OpusTabViewState extends State<OpusTabView>
     }
   }
 
+  /// Implements lazy loading by incrementing the number of loaded items
   void _loadMoreItems() {
     setState(() {
       _loadedItemsCount += 20;
     });
   }
 
+  /// Builds a grid of colors for a specific category
+  /// Implements lazy loading and page-based organization
   Widget _buildColorGrid(List<dynamic> colors) {
     try {
       // Group colors by page
@@ -1260,7 +1010,6 @@ class _OpusTabViewState extends State<OpusTabView>
         ),
       );
     } catch (e) {
-      debugPrint('Error building color grid: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -1274,6 +1023,8 @@ class _OpusTabViewState extends State<OpusTabView>
     }
   }
 
+  /// Builds the content for a specific page of colors
+  /// Creates a grid of color cards with proper styling
   Widget _buildPageContent(int pageNumber, List<dynamic> colors) {
     try {
       return Column(
@@ -1312,7 +1063,7 @@ class _OpusTabViewState extends State<OpusTabView>
                         onFavoriteToggle: widget.onFavoriteToggle,
                         isFavorite: widget.favoriteColorNumbers
                             .contains(color['number']),
-                        allColors: widget.filteredColors,
+                        allColors: widget.allColors,
                       ),
                     ),
                   );
@@ -1336,7 +1087,6 @@ class _OpusTabViewState extends State<OpusTabView>
         ],
       );
     } catch (e) {
-      debugPrint('Error building page content: $e');
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -1350,345 +1100,8 @@ class _OpusTabViewState extends State<OpusTabView>
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TabBar(
-          controller: _subTabController,
-          isScrollable: true,
-          tabs: _categories.map((category) => Tab(text: category)).toList(),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _subTabController,
-            children: _categories.map((category) {
-              return _buildColorGrid(_categorizedColors[category] ?? []);
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// Similarly update NCSTabView to implement lazy loading
-class _NCSTabViewState extends State<NCSTabView> with TickerProviderStateMixin {
-  late TabController _subTabController;
-  Map<String, List<dynamic>> _categorizedColors = {};
-  List<String> _categories = ['All'];
-  int _loadedItemsCount = 20;
-  final Map<int, Widget> _pageCache = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _categorizeColors();
-  }
-
-  @override
-  void dispose() {
-    _subTabController.dispose();
-    _pageCache.clear();
-    super.dispose();
-  }
-
-  void _categorizeColors() {
-    // Initialize with "All" category
-    _categorizedColors = {'All': widget.colors};
-
-    // Group colors by their notation letters
-    Map<String, List<dynamic>> tempCategories = {};
-
-    for (var color in widget.colors) {
-      String colorNumber = color['number'].toString();
-      String category = '';
-
-      // Extract category based on color notation
-      if (colorNumber.contains('-')) {
-        List<String> parts = colorNumber.split('-');
-        if (parts.length > 1) {
-          String notation = parts[1].toUpperCase();
-
-          // Handle N notation (neutral colors)
-          if (notation.startsWith('N')) {
-            category = 'N';
-          } else {
-            // Extract all letter combinations
-            RegExp baseHueExp = RegExp(r'[YRBG]');
-            Iterable<RegExpMatch> baseHueMatches =
-                baseHueExp.allMatches(notation);
-
-            // Get all hue letters
-            List<String> letters =
-                baseHueMatches.map((m) => m.group(0)!).toList();
-
-            if (letters.length == 1) {
-              // Single letter notation (e.g., Y, R, B, G)
-              category = letters[0];
-            } else if (letters.length == 2) {
-              // Double letter notation (e.g., YR, RB, BG, GY)
-              // Sort letters to ensure consistent ordering (e.g., RY becomes YR)
-              letters.sort();
-              category = letters.join('');
-            } else if (letters.length > 2) {
-              // Handle triple letter notation if it exists
-              letters.sort();
-              category = letters.join('');
-            }
-          }
-        }
-      }
-
-      // Only add the color if we found a valid category
-      if (category.isNotEmpty) {
-        if (!tempCategories.containsKey(category)) {
-          tempCategories[category] = [];
-        }
-        tempCategories[category]!.add(color);
-      }
-    }
-
-    // Sort categories and add to the map
-    List<String> sortedCategories = tempCategories.keys.toList()..sort();
-    for (var category in sortedCategories) {
-      _categorizedColors[category] = tempCategories[category]!;
-    }
-
-    // Define the desired order of categories
-    List<String> orderedCategories = ['All'];
-
-    // Add N first if it exists
-    if (sortedCategories.contains('N')) {
-      orderedCategories.add('N');
-      sortedCategories.remove('N');
-    }
-
-    // Add single letter categories in specific order
-    List<String> singleLetters = ['Y', 'R', 'B', 'G'];
-    for (var letter in singleLetters) {
-      if (sortedCategories.contains(letter)) {
-        orderedCategories.add(letter);
-        sortedCategories.remove(letter);
-      }
-    }
-
-    // Add double letter categories in specific order
-    List<String> doubleLetters = ['YR', 'RB', 'BG', 'GY'];
-    for (var combo in doubleLetters) {
-      if (sortedCategories.contains(combo)) {
-        orderedCategories.add(combo);
-        sortedCategories.remove(combo);
-      }
-    }
-
-    // Add any remaining categories that weren't in our predefined lists
-    orderedCategories.addAll(sortedCategories);
-
-    _categories = orderedCategories;
-
-    // Initialize tab controller
-    if (mounted) {
-      setState(() {
-        _subTabController =
-            TabController(length: _categories.length, vsync: this);
-      });
-    }
-  }
-
-  void _loadMoreItems() {
-    setState(() {
-      _loadedItemsCount += 20;
-    });
-  }
-
-  Widget _buildColorGrid(List<dynamic> colors) {
-    try {
-      // Group colors by page
-      Map<int, List<dynamic>> colorsByPage = {};
-      for (var color in colors) {
-        int page = color['page'] ?? 1;
-        if (!colorsByPage.containsKey(page)) {
-          colorsByPage[page] = [];
-        }
-        colorsByPage[page]!.add(color);
-      }
-
-      // Sort pages
-      List<int> sortedPages = colorsByPage.keys.toList()..sort();
-
-      // Limit items for lazy loading
-      int totalItems = 0;
-      List<int> pagesToShow = [];
-
-      for (var page in sortedPages) {
-        int pageItemCount = colorsByPage[page]!.length;
-        if (totalItems + pageItemCount <= _loadedItemsCount) {
-          pagesToShow.add(page);
-          totalItems += pageItemCount;
-        } else {
-          if (totalItems < _loadedItemsCount) {
-            pagesToShow.add(page);
-          }
-          break;
-        }
-      }
-
-      return NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification scrollInfo) {
-          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-            if (totalItems < colors.length) {
-              _loadMoreItems();
-            }
-          }
-          return false;
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.all(8),
-          itemCount: pagesToShow.length + (totalItems < colors.length ? 1 : 0),
-          itemBuilder: (context, pageIndex) {
-            if (pageIndex >= pagesToShow.length) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-
-            final pageNumber = pagesToShow[pageIndex];
-            final pageColors = colorsByPage[pageNumber]!;
-
-            List<dynamic> colorsToShow = pageColors;
-            if (pageIndex == pagesToShow.length - 1 &&
-                totalItems > _loadedItemsCount) {
-              int remainingItems =
-                  _loadedItemsCount - (totalItems - pageColors.length);
-              if (remainingItems > 0 && remainingItems <= pageColors.length) {
-                colorsToShow = pageColors.sublist(0, remainingItems);
-              }
-            }
-
-            if (!_pageCache.containsKey(pageNumber)) {
-              _pageCache[pageNumber] =
-                  _buildPageContent(pageNumber, colorsToShow);
-            }
-            return _pageCache[pageNumber]!;
-          },
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error building color grid: $e');
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Error loading colors. Please try again.',
-            style: TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-  }
-
-  Widget _buildPageContent(int pageNumber, List<dynamic> colors) {
-    try {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              'Page $pageNumber',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.5,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: colors.length,
-            itemBuilder: (context, index) {
-              if (index >= colors.length) {
-                return const SizedBox.shrink();
-              }
-
-              final color = colors[index];
-              return Card(
-                elevation: 4,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ColorDetailPage(
-                          color: {
-                            ...color,
-                            'tab': 'ncs',
-                          },
-                          onFavoriteToggle: widget.onFavoriteToggle,
-                          isFavorite: widget.favoriteColorNumbers
-                              .contains(color['number']),
-                          allColors: widget.filteredColors,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: widget.hexToColor(color['value']),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          color['number'] ?? '',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      );
-    } catch (e) {
-      debugPrint('Error building page content: $e');
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Error loading page content. Please try again.',
-            style: TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-  }
-
+  /// Main build method for OpusTabView
+  /// Creates a tabbed interface for color categories
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1757,7 +1170,7 @@ class AboutPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Version 1.0.0',
+              'Version 1.0.23+23',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
@@ -1775,10 +1188,9 @@ class AboutPage extends StatelessWidget {
                   size: AdSize.banner,
                   request: const AdRequest(),
                   listener: BannerAdListener(
-                    onAdLoaded: (ad) => debugPrint('Banner ad loaded.'),
+                    onAdLoaded: (ad) {},
                     onAdFailedToLoad: (ad, error) {
                       ad.dispose();
-                      debugPrint('Banner ad failed to load: $error');
                     },
                   ),
                 )..load(),
