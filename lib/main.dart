@@ -903,7 +903,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Colors'),
+        title: const Text('Color Palette'),
         leading: IconButton(
           icon: const Icon(Icons.info_outline),
           onPressed: () {
@@ -930,7 +930,10 @@ class _ColorPalettePageState extends State<ColorPalettePage>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ColorTablePage(),
+                  builder: (context) => ColorTablePage(
+                    onFavoriteToggle: toggleFavorite,
+                    favoriteColorNumbers: _favoriteColors,
+                  ),
                 ),
               );
             },
@@ -966,7 +969,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                 context,
                 MaterialPageRoute(
                   builder: (context) => FavoritesPage(
-                    allColors: filteredColors,
+                    allColors: colors,
                     onFavoriteToggle: toggleFavorite,
                     favoriteColorNumbers: _favoriteColors,
                   ),

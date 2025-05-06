@@ -8,7 +8,14 @@ import '../main.dart';
 import 'dart:math' as math;
 
 class ColorTablePage extends StatefulWidget {
-  const ColorTablePage({super.key});
+  final Function(String) onFavoriteToggle;
+  final Set<String> favoriteColorNumbers;
+
+  const ColorTablePage({
+    super.key,
+    required this.onFavoriteToggle,
+    required this.favoriteColorNumbers,
+  });
 
   @override
   State<ColorTablePage> createState() => _ColorTablePageState();
@@ -32,11 +39,9 @@ class _ColorTablePageState extends State<ColorTablePage>
   late Map<String, List<dynamic>> colors;
   String searchQuery = '';
   Map<String, List<dynamic>> filteredColors = {};
-  late SharedPreferences prefs;
   bool isLoading = true;
 
   late TabController _tabController;
-  Set<String> _favoriteColors = {};
   final Map<String, Color> _colorCache = {};
 
   // Lazy loading configuration
@@ -50,7 +55,7 @@ class _ColorTablePageState extends State<ColorTablePage>
   @override
   void initState() {
     super.initState();
-    loadColorsAndFavorites();
+    loadColors();
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -60,13 +65,12 @@ class _ColorTablePageState extends State<ColorTablePage>
     super.dispose();
   }
 
-  Future<void> loadColorsAndFavorites() async {
+  Future<void> loadColors() async {
     setState(() {
       isLoading = true;
     });
 
     await _loadColors();
-    await _loadFavorites();
 
     setState(() {
       isLoading = false;
@@ -109,36 +113,6 @@ class _ColorTablePageState extends State<ColorTablePage>
     }
   }
 
-  Future<void> _loadFavorites() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final favorites = prefs.getStringList('favoriteColors') ?? [];
-      setState(() {
-        _favoriteColors = favorites.toSet();
-      });
-    } catch (e) {
-      debugPrint('Error loading favorites: $e');
-    }
-  }
-
-  Future<void> toggleFavorite(String colorNumber) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final favorites = prefs.getStringList('favoriteColors') ?? [];
-      if (favorites.contains(colorNumber)) {
-        favorites.remove(colorNumber);
-      } else {
-        favorites.add(colorNumber);
-      }
-      await prefs.setStringList('favoriteColors', favorites);
-      setState(() {
-        _favoriteColors = favorites.toSet();
-      });
-    } catch (e) {
-      debugPrint('Error toggling favorite: $e');
-    }
-  }
-
   void filterColors(String query) {
     setState(() {
       searchQuery = query;
@@ -171,51 +145,21 @@ class _ColorTablePageState extends State<ColorTablePage>
                     ? number
                     : number.replaceAll(RegExp(r'(\d{4})([A-Z])'), r'$1-$2');
 
-                // Check if the query matches any variation
-                bool numberMatch = number.contains(normalizedQuery) ||
+                return name.contains(normalizedQuery) ||
+                    number.contains(normalizedQuery) ||
+                    value.contains(normalizedQuery) ||
                     cleanNumber.contains(normalizedQuery) ||
                     withHyphen.contains(normalizedQuery);
-
-                // For specific NCS patterns like "0300-N" or "4502-R50B"
-                if (RegExp(r'^\d{4}-[A-Z](\d{2}[A-Z])?$')
-                    .hasMatch(normalizedQuery)) {
-                  String queryClean = normalizedQuery.replaceAll('-', '');
-                  String colorClean = number.replaceAll('-', '');
-                  numberMatch = numberMatch || colorClean.contains(queryClean);
-                }
-
-                debugPrint(
-                    '🎨 NCS Color: $number, Clean: $cleanNumber, With Hyphen: $withHyphen');
-                debugPrint('🔍 Match found: $numberMatch');
-
-                return name.contains(normalizedQuery) ||
-                    numberMatch ||
-                    value.contains(normalizedQuery);
               }
 
-              // Standard search for other categories
               return name.contains(normalizedQuery) ||
                   number.contains(normalizedQuery) ||
                   value.contains(normalizedQuery);
             }).toList();
 
-            debugPrint(
-                '📊 ${entry.key} results: ${filteredCategoryColors.length}');
             return MapEntry(entry.key, filteredCategoryColors);
           }),
         );
-      }
-
-      // Reset loaded items count when search query changes
-      _loadedItemsCount = {
-        'asian': 20,
-        'ncs': 20,
-      };
-
-      // Cache the filtered colors for lazy loading
-      _cachedFilteredColors.clear();
-      for (var entry in filteredColors.entries) {
-        _cachedFilteredColors[entry.key] = List.from(entry.value);
       }
     });
   }
@@ -229,53 +173,66 @@ class _ColorTablePageState extends State<ColorTablePage>
     if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
     buffer.write(hexString.replaceFirst('#', ''));
     final color = Color(int.parse(buffer.toString(), radix: 16));
-
     _colorCache[hexString] = color;
     return color;
   }
 
-  /// Loads more items for a specific category
-  void _loadMoreItems(String category) {
-    if (_isLoadingMore) return;
-
-    setState(() {
-      _isLoadingMore = true;
-      _loadedItemsCount[category] = (_loadedItemsCount[category] ?? 0) + 20;
-      _isLoadingMore = false;
-    });
-  }
-
-  /// Gets the currently loaded items for a category
-  List<dynamic> _getLoadedItems(String category) {
-    final allItems =
-        _cachedFilteredColors[category] ?? filteredColors[category] ?? [];
-    final loadedCount = _loadedItemsCount[category] ?? 20;
-
-    if (allItems.length <= loadedCount) {
-      return allItems;
-    }
-
-    return allItems.sublist(0, loadedCount);
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Color Table'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'ASIAN'),
+            Tab(text: 'NCS'),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              onChanged: filterColors,
+              decoration: const InputDecoration(
+                labelText: 'Search Colors',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildColorGrid('asian'),
+                _buildColorGrid('ncs'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildColorGrid(String category) {
-    final categoryColors = _getLoadedItems(category);
-    final allCategoryColors = filteredColors[category] ?? [];
-    final hasMoreItems = categoryColors.length < allCategoryColors.length;
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
+    final categoryColors = filteredColors[category] ?? [];
     if (categoryColors.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
-          child: Text(
-            'No colors found in this category',
-            style: TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
+          child: Text('No colors found in this category'),
         ),
       );
     }
 
+    // Group colors by page
     Map<int, List<dynamic>> colorsByPage = {};
     for (var color in categoryColors) {
       int page = int.tryParse(color['page']?.toString() ?? '1') ?? 1;
@@ -285,159 +242,96 @@ class _ColorTablePageState extends State<ColorTablePage>
       colorsByPage[page]!.add(color);
     }
 
+    // Sort pages
     List<int> sortedPages = colorsByPage.keys.toList()..sort();
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-          if (hasMoreItems) {
-            _loadMoreItems(category);
-          }
-        }
-        return false;
-      },
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(8),
-              itemCount: sortedPages.length,
-              itemBuilder: (context, pageIndex) {
-                final pageNumber = sortedPages[pageIndex];
-                final pageColors = colorsByPage[pageNumber]!;
+    return SingleChildScrollView(
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(8),
+        itemCount: sortedPages.length,
+        itemBuilder: (context, pageIndex) {
+          final pageNumber = sortedPages[pageIndex];
+          final pageColors = colorsByPage[pageNumber]!;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        'Page $pageNumber',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.5,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: pageColors.length,
-                      itemBuilder: (context, index) {
-                        var color = pageColors[index];
-                        return Card(
-                          elevation: 4,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ColorDetailPage(
-                                    color: {
-                                      ...color,
-                                      'tab': category,
-                                    },
-                                    onFavoriteToggle: toggleFavorite,
-                                    isFavorite: _favoriteColors
-                                        .contains(color['number']),
-                                    allColors: colors,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: hexToColor(color['value']),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    color['number'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Page $pageNumber',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.5,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: pageColors.length,
+                itemBuilder: (context, index) {
+                  var color = pageColors[index];
+                  return Card(
+                    elevation: 4,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ColorDetailPage(
+                              color: {
+                                ...color,
+                                'tab': category,
+                              },
+                              onFavoriteToggle: widget.onFavoriteToggle,
+                              isFavorite: widget.favoriteColorNumbers
+                                  .contains(color['number']),
+                              allColors: colors,
                             ),
                           ),
                         );
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: hexToColor(color['value']),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              color['number'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
-                );
-              },
-            ),
-            if (hasMoreItems)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                  );
+                },
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Wood'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search colors by name, number, or value...',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: filterColors,
-            ),
-          ),
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'ASIAN'),
-              Tab(text: 'NCS'),
             ],
-          ),
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildColorGrid('asian'),
-                      _buildColorGrid('ncs'),
-                    ],
-                  ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
