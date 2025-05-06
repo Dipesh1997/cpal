@@ -183,11 +183,11 @@ class WoodColors {
       'hex': '#F7EEDF'
     },
     {
-      'number': '8536',
-      'name': 'BARREN OAK',
-      'value': '#BB9C7F',
+      'number': '8636',
+      'name': 'COBBLED PATH',
+      'value': '#F7ECE1',
       'page': 4,
-      'hex': '#BB9C7F'
+      'hex': '#F7ECE1'
     },
     {
       'number': 'L142',
@@ -311,9 +311,9 @@ class WoodColors {
     {
       'number': '0332',
       'name': 'CARAMEL MILK',
-      'value': '#FF0000',
+      'value': '#F3ECDC',
       'page': 6,
-      'hex': '#FF0000'
+      'hex': '#F3ECDC'
     },
     {
       'number': 'L149',
@@ -402,9 +402,9 @@ class WoodColors {
     {
       'number': '8078',
       'name': 'MAPLE CREAM',
-      'value': '#FF0000',
+      'value': '#EFE9DD',
       'page': 8,
-      'hex': '#FF0000'
+      'hex': '#EFE9DD'
     },
     {
       'number': 'L122',
@@ -519,11 +519,11 @@ class WoodColors {
       'hex': '#F0EFE9'
     },
     {
-      'number': '7200',
-      'name': 'ROYAL GLIMMER',
-      'value': '#9298BC',
+      'number': '7220',
+      'name': 'SHY IRIS',
+      'value': '#EEECE7',
       'page': 10,
-      'hex': '#9298BC'
+      'hex': '#EEECE7'
     },
     {
       'number': 'RAL 9003',
@@ -535,16 +535,16 @@ class WoodColors {
     {
       'number': '0345',
       'name': 'GHOST WHITE',
-      'value': '#FF0000',
+      'value': '#F0EBDF',
       'page': 10,
-      'hex': '#FF0000'
+      'hex': '#F0EBDF'
     },
     {
       'number': '0334',
       'name': 'SNOW GREY',
-      'value': '#FF0000',
+      'value': '#EBE8DD',
       'page': 10,
-      'hex': '#FF0000'
+      'hex': '#EBE8DD'
     },
     {
       'number': '5112',
@@ -948,9 +948,9 @@ class WoodColors {
     {
       'number': '0303',
       'name': 'EGG PLANT',
-      'value': '#FF0000',
+      'value': '#82456A',
       'page': 17,
-      'hex': '#FF0000'
+      'hex': '#82456A'
     },
     {
       'number': '8131',
@@ -990,16 +990,16 @@ class WoodColors {
     {
       'number': '0310',
       'name': 'LAVENDER BURST',
-      'value': '#FF0000',
+      'value': '#D9A6C0',
       'page': 18,
-      'hex': '#FF0000'
+      'hex': '#D9A6C0'
     },
     {
       'number': '8027',
       'name': 'ROUGE VELVET',
-      'value': '#FF0000',
+      'value': '#C284A0',
       'page': 18,
-      'hex': '#FF0000'
+      'hex': '#C284A0'
     },
     {
       'number': '5053',
@@ -1053,16 +1053,16 @@ class WoodColors {
     {
       'number': '0301',
       'name': 'PINK LILAC',
-      'value': '#FF0000',
+      'value': '#C39EB7',
       'page': 19,
-      'hex': '#FF0000'
+      'hex': '#C39EB7'
     },
     {
       'number': '0302',
       'name': 'PURPLE SPRAY',
-      'value': '#FF0000',
+      'value': '#A66087',
       'page': 19,
-      'hex': '#FF0000'
+      'hex': '#A66087'
     },
     {
       'number': '8203',
@@ -1102,9 +1102,9 @@ class WoodColors {
     {
       'number': '8029',
       'name': 'ROSEWOOD PINK',
-      'value': '#FF0000',
+      'value': '#AB7D92',
       'page': 20,
-      'hex': '#FF0000'
+      'hex': '#AB7D92'
     },
     {
       'number': '8030',
@@ -1228,16 +1228,16 @@ class WoodColors {
     {
       'number': '8035',
       'name': 'PURPLE JAM',
-      'value': '#FF0000',
+      'value': '#7F5985',
       'page': 22,
-      'hex': '#FF0000'
+      'hex': '#7F5985'
     },
     {
       'number': '8031',
       'name': 'PASTEL PINK',
-      'value': '#FF0000',
+      'value': '#E6DCE2',
       'page': 23,
-      'hex': '#FF0000'
+      'hex': '#E6DCE2'
     },
     {
       'number': '7154',
@@ -1277,9 +1277,9 @@ class WoodColors {
     {
       'number': '8033',
       'name': 'CREAMY BRINJAL',
-      'value': '#FF0000',
+      'value': '#9957A0',
       'page': 23,
-      'hex': '#FF0000'
+      'hex': '#9957A0'
     },
     {
       'number': 'RAL 4008',
@@ -1326,9 +1326,9 @@ class WoodColors {
     {
       'number': '8032',
       'name': 'LAVENDER SCENT',
-      'value': '#FF0000',
+      'value': '#C9B0D0',
       'page': 24,
-      'hex': '#FF0000'
+      'hex': '#C9B0D0'
     },
     {
       'number': '9602',
@@ -1375,9 +1375,9 @@ class WoodColors {
     {
       'number': '0312',
       'name': 'LAVENDER DUST',
-      'value': '#FF0000',
+      'value': '#BCA8D0',
       'page': 25,
-      'hex': '#FF0000'
+      'hex': '#BCA8D0'
     },
     {
       'number': '7160',
@@ -1487,9 +1487,9 @@ class WoodColors {
     {
       'number': '0304',
       'name': 'VOILA',
-      'value': '#FF0000',
+      'value': '#7A87B7',
       'page': 27,
-      'hex': '#FF0000'
+      'hex': '#7A87B7'
     },
     {
       'number': '5072',
@@ -1543,9 +1543,9 @@ class WoodColors {
     {
       'number': '0315',
       'name': 'INDIGO INSPIRATIONS',
-      'value': '#FF0000',
+      'value': '#9391C4',
       'page': 28,
-      'hex': '#FF0000'
+      'hex': '#9391C4'
     },
     {
       'number': '5061',
@@ -1592,16 +1592,16 @@ class WoodColors {
     {
       'number': '8038',
       'name': 'ORCHID BLUE',
-      'value': '#FF0000',
+      'value': '#8C94C6',
       'page': 29,
-      'hex': '#FF0000'
+      'hex': '#8C94C6'
     },
     {
       'number': '8039',
       'name': 'WISE OLD BLUE',
-      'value': '#FF0000',
+      'value': '#787FB1',
       'page': 29,
-      'hex': '#FF0000'
+      'hex': '#787FB1'
     },
     {
       'number': '5062',
@@ -1620,9 +1620,9 @@ class WoodColors {
     {
       'number': '0321',
       'name': 'BLUE VELVET',
-      'value': '#FF0000',
+      'value': '#40426E',
       'page': 29,
-      'hex': '#FF0000'
+      'hex': '#40426E'
     },
     {
       'number': '7203',
@@ -1648,23 +1648,23 @@ class WoodColors {
     {
       'number': '8036',
       'name': 'GREY INDIGO',
-      'value': '#FF0000',
+      'value': '#9DA2C4',
       'page': 30,
-      'hex': '#FF0000'
+      'hex': '#9DA2C4'
     },
     {
       'number': '8037',
       'name': 'STEEL INDIGO',
-      'value': '#FF0000',
+      'value': '#8389AF',
       'page': 30,
-      'hex': '#FF0000'
+      'hex': '#8389AF'
     },
     {
       'number': '0305',
       'name': 'VIOLET',
-      'value': '#FF0000',
+      'value': '#4E4C6D',
       'page': 30,
-      'hex': '#FF0000'
+      'hex': '#4E4C6D'
     },
     {
       'number': 'RAL 5022',
@@ -1816,9 +1816,9 @@ class WoodColors {
     {
       'number': '8044',
       'name': 'SILVER BLUE',
-      'value': '#FF0000',
+      'value': '#6682AF',
       'page': 33,
-      'hex': '#FF0000'
+      'hex': '#6682AF'
     },
     {
       'number': 'RAL 5023',
@@ -1928,9 +1928,9 @@ class WoodColors {
     {
       'number': '8043',
       'name': 'Airline Blue ',
-      'value': '#FF0000',
+      'value': '#97B4DB',
       'page': 35,
-      'hex': '#FF0000'
+      'hex': '#97B4DB'
     },
     {
       'number': '8046',
@@ -1998,9 +1998,9 @@ class WoodColors {
     {
       'number': '0415',
       'name': 'Beau Blue',
-      'value': '#FF0000',
+      'value': '#1E6F9E',
       'page': 36,
-      'hex': '#FF0000'
+      'hex': '#1E6F9E'
     },
     {
       'number': 'RAL 5019',
@@ -2033,9 +2033,9 @@ class WoodColors {
     {
       'number': '8045',
       'name': 'Powder Sky ',
-      'value': '#FF0000',
+      'value': '#A5CCE3',
       'page': 37,
-      'hex': '#FF0000'
+      'hex': '#A5CCE3'
     },
     {
       'number': '7329',
@@ -2068,9 +2068,9 @@ class WoodColors {
     {
       'number': '8050',
       'name': 'School Blue',
-      'value': '#FF0000',
+      'value': '#11698E',
       'page': 37,
-      'hex': '#FF0000'
+      'hex': '#11698E'
     },
     {
       'number': '9210',
@@ -2110,9 +2110,9 @@ class WoodColors {
     {
       'number': '0413',
       'name': 'Reare Hue',
-      'value': '#FF0000',
+      'value': '#3AA1CC',
       'page': 38,
-      'hex': '#FF0000'
+      'hex': '#3AA1CC'
     },
     {
       'number': 'RAL 5015',
@@ -2145,9 +2145,9 @@ class WoodColors {
     {
       'number': '8040',
       'name': 'Cement Blue ',
-      'value': '#FF0000',
+      'value': '#98B1C5',
       'page': 39,
-      'hex': '#FF0000'
+      'hex': '#98B1C5'
     },
     {
       'number': '7305',
@@ -2166,23 +2166,23 @@ class WoodColors {
     {
       'number': '0322',
       'name': 'Stone Blue',
-      'value': '#FF0000',
+      'value': '#8AA5BE',
       'page': 39,
-      'hex': '#FF0000'
+      'hex': '#8AA5BE'
     },
     {
       'number': '0470',
-      'name': 'Harbour Wind',
-      'value': '#FF0000',
+      'name': 'Harbour Blue',
+      'value': '#7D91A7',
       'page': 39,
-      'hex': '#FF0000'
+      'hex': '#7D91A7'
     },
     {
       'number': '0401',
       'name': 'Elegance',
-      'value': '#FF0000',
+      'value': '#334C6C',
       'page': 39,
-      'hex': '#FF0000'
+      'hex': '#334C6C'
     },
     {
       'number': '8266',
@@ -2201,9 +2201,9 @@ class WoodColors {
     {
       'number': '8042',
       'name': 'Whale Blue',
-      'value': '#FF0000',
+      'value': '#8299AD',
       'page': 40,
-      'hex': '#FF0000'
+      'hex': '#8299AD'
     },
     {
       'number': '7304',
@@ -2215,9 +2215,9 @@ class WoodColors {
     {
       'number': '8041',
       'name': 'Aegean Blue',
-      'value': '#FF0000',
+      'value': '#7594B1',
       'page': 40,
-      'hex': '#FF0000'
+      'hex': '#7594B1'
     },
     {
       'number': '5066',
@@ -2278,9 +2278,9 @@ class WoodColors {
     {
       'number': '0407',
       'name': 'Baltic Blue',
-      'value': '#FF0000',
+      'value': '#387597',
       'page': 41,
-      'hex': '#FF0000'
+      'hex': '#387597'
     },
     {
       'number': 'X148',
@@ -2292,9 +2292,9 @@ class WoodColors {
     {
       'number': '0409',
       'name': 'Young Desire',
-      'value': '#FF0000',
+      'value': '#2F5977',
       'page': 41,
-      'hex': '#FF0000'
+      'hex': '#2F5977'
     },
     {
       'number': '1276',
@@ -2348,9 +2348,9 @@ class WoodColors {
     {
       'number': '0327',
       'name': 'Blue Natina',
-      'value': '#FF0000',
+      'value': '#54666D',
       'page': 42,
-      'hex': '#FF0000'
+      'hex': '#54666D'
     },
     {
       'number': '7371',
@@ -2383,16 +2383,16 @@ class WoodColors {
     {
       'number': '0469',
       'name': 'Mystic Grey ',
-      'value': '#FF0000',
+      'value': '#7392A3',
       'page': 43,
-      'hex': '#FF0000'
+      'hex': '#7392A3'
     },
     {
       'number': '0324',
       'name': 'Cerulean Blue',
-      'value': '#FF0000',
+      'value': '#577E91',
       'page': 43,
-      'hex': '#FF0000'
+      'hex': '#577E91'
     },
     {
       'number': '5077',
@@ -2446,9 +2446,9 @@ class WoodColors {
     {
       'number': '0412',
       'name': 'Uniform Blue',
-      'value': '#FF0000',
+      'value': '#5AA4BD',
       'page': 44,
-      'hex': '#FF0000'
+      'hex': '#5AA4BD'
     },
     {
       'number': '9686',
@@ -2460,9 +2460,9 @@ class WoodColors {
     {
       'number': '0397',
       'name': 'Swirl',
-      'value': '#FF0000',
+      'value': '#27809A',
       'page': 44,
-      'hex': '#FF0000'
+      'hex': '#27809A'
     },
     {
       'number': '9656',
@@ -2488,9 +2488,9 @@ class WoodColors {
     {
       'number': '0328',
       'name': 'Satin Blue',
-      'value': '#FF0000',
+      'value': '#91C9D9',
       'page': 45,
-      'hex': '#FF0000'
+      'hex': '#91C9D9'
     },
     {
       'number': '5082',
@@ -2502,9 +2502,9 @@ class WoodColors {
     {
       'number': '0411',
       'name': 'Sky Blue',
-      'value': '#FF0000',
+      'value': '#63B2D0',
       'page': 45,
-      'hex': '#FF0000'
+      'hex': '#63B2D0'
     },
     {
       'number': '8049',
@@ -6534,9 +6534,9 @@ class WoodColors {
     {
       'number': '8017',
       'name': 'Blushing Brown',
-      'value': '#FF0000',
+      'value': '#CF7761',
       'page': 117,
-      'hex': '#FF0000'
+      'hex': '#CF7761'
     },
     {
       'number': '8021',
@@ -8655,9 +8655,9 @@ class WoodColors {
     {
       'number': '0344',
       'name': 'Pollen Dust',
-      'value': '#FF0000',
+      'value': '#E5D9CD',
       'page': 155,
-      'hex': '#FF0000'
+      'hex': '#E5D9CD'
     },
     {
       'number': '8475',
