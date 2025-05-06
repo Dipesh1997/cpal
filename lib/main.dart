@@ -17,6 +17,7 @@ import 'ncscolors.dart';
 import 'dart:math' as math;
 import 'services/ad_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:share_plus/share_plus.dart';
 
 // Main entry point for the Color Palette application
 // Initializes the app and sets up required services
@@ -40,7 +41,206 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const ColorPalettePage(),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  String _searchText = '';
+  int _currentIndex = 0;
+  final String _targetText = 'l136';
+  bool _isSearching = true;
+  bool _showResults = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
+    _controller.forward();
+
+    // Simulate typing animation
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _startTypingAnimation();
+    });
+
+    // Show results after typing
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      setState(() {
+        _showResults = true;
+      });
+    });
+
+    // Navigate to main screen after animation
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const ColorPalettePage()),
+      );
+    });
+  }
+
+  void _startTypingAnimation() {
+    Future.doWhile(() async {
+      if (_currentIndex < _targetText.length) {
+        setState(() {
+          _searchText += _targetText[_currentIndex];
+          _currentIndex++;
+        });
+        await Future.delayed(const Duration(milliseconds: 200));
+        return true;
+      } else {
+        setState(() {
+          _isSearching = false;
+        });
+        return false;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // App Logo at top center
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Center(
+                child: Image.asset(
+                  'assets/icon.png',
+                  width: 80,
+                  height: 80,
+                ),
+              ),
+            ),
+            const Spacer(),
+            // Search Box
+            Container(
+              width: 200,
+              height: 50,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.search, color: Colors.grey),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _searchText,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  if (_isSearching)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Search Results
+            if (_showResults)
+              Container(
+                width: 200,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Page 8',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Card(
+                      elevation: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                    0xFFF1E8D8), // Updated to #F1E8D8
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'L136',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const Spacer(),
+            // App Title
+            FadeTransition(
+              opacity: _animation,
+              child: const Text(
+                'Color Palette',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -96,6 +296,18 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   // Preloaded colors for ColorTablePage
   static Map<String, List<dynamic>>? _preloadedTableColors;
 
+  RewardedAd? _rewardedAd;
+  bool _isRewarded = false;
+  bool _isSpinning = false;
+  double _rotation = 0;
+  late AnimationController _spinController;
+  late Animation<double> _spinAnimation;
+
+  bool _isAdLoading = false;
+  int _adLoadAttempts = 0;
+  static const int maxAdLoadAttempts = 5;
+  DateTime? _lastAdLoadTime;
+
   /// Initializes the state
   /// Sets up controllers, loads colors and favorites
   @override
@@ -105,9 +317,42 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     _mainTabController = TabController(length: 1, vsync: this);
     _mainTabController.addListener(_handleMainTabChange);
     _loadFavorites();
-
-    // Preload colors for ColorTablePage in the background
     _preloadTableColors();
+
+    // Initialize spin wheel animation
+    _spinController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    );
+
+    _spinAnimation = Tween<double>(
+      begin: 0,
+      end: 2 * math.pi * 5,
+    ).animate(CurvedAnimation(
+      parent: _spinController,
+      curve: Curves.easeOut,
+    ));
+
+    _spinController.addListener(() {
+      setState(() {
+        _rotation = _spinAnimation.value;
+      });
+    });
+
+    _spinController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _isSpinning = false;
+        });
+        _showRewardDialog();
+      }
+    });
+
+    // Initialize Mobile Ads SDK
+    MobileAds.instance.initialize().then((initializationStatus) {
+      // Load rewarded ad after SDK initialization
+      _loadRewardedAd();
+    });
   }
 
   /// Cleans up resources when the widget is disposed
@@ -119,6 +364,8 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     _asianTabController?.dispose();
     _tabViewCache.clear();
     _asianTabViewCache.clear();
+    _spinController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -656,7 +903,7 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Color Palette'),
+        title: const Text('Colors'),
         leading: IconButton(
           icon: const Icon(Icons.info_outline),
           onPressed: () {
@@ -669,6 +916,14 @@ class _ColorPalettePageState extends State<ColorPalettePage>
           },
         ),
         actions: [
+          // Spin wheel button
+          IconButton(
+            icon: Transform.rotate(
+              angle: _rotation,
+              child: const Icon(Icons.casino),
+            ),
+            onPressed: _isSpinning ? null : _startSpin,
+          ),
           IconButton(
             icon: const Icon(Icons.chair_alt_outlined),
             onPressed: () {
@@ -717,6 +972,13 @@ class _ColorPalettePageState extends State<ColorPalettePage>
                   ),
                 ),
               );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () {
+              Share.share(
+                  'Check out this amazing Color Palette app! https://play.google.com/store/apps/details?id=com.color.paletteasian');
             },
           ),
         ],
@@ -807,6 +1069,185 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   /// Gets the preloaded colors for ColorTablePage
   static Map<String, List<dynamic>>? getPreloadedTableColors() {
     return _preloadedTableColors;
+  }
+
+  void _loadRewardedAd() {
+    if (_isAdLoading) return;
+
+    // Check if we should reset the attempt counter
+    if (_lastAdLoadTime != null) {
+      final timeSinceLastLoad = DateTime.now().difference(_lastAdLoadTime!);
+      if (timeSinceLastLoad > const Duration(minutes: 5)) {
+        _adLoadAttempts = 0;
+      }
+    }
+
+    if (_adLoadAttempts >= maxAdLoadAttempts) {
+      // Reset attempts after 5 minutes
+      if (_lastAdLoadTime != null) {
+        final timeSinceLastLoad = DateTime.now().difference(_lastAdLoadTime!);
+        if (timeSinceLastLoad > const Duration(minutes: 5)) {
+          _adLoadAttempts = 0;
+        } else {
+          return;
+        }
+      }
+    }
+
+    setState(() {
+      _isAdLoading = true;
+      _adLoadAttempts++;
+      _lastAdLoadTime = DateTime.now();
+    });
+
+    RewardedAd.load(
+      adUnitId: 'ca-app-pub-6710120263757804/7764431600',
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          setState(() {
+            _rewardedAd = ad;
+            _isAdLoading = false;
+            _adLoadAttempts = 0;
+          });
+
+          _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _loadRewardedAd();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              print('Ad failed to show: $error');
+              ad.dispose();
+              _loadRewardedAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          print('Ad failed to load: $error');
+          setState(() {
+            _rewardedAd = null;
+            _isAdLoading = false;
+          });
+
+          if (_adLoadAttempts < maxAdLoadAttempts) {
+            // Exponential backoff for retries
+            final delay = Duration(seconds: math.min(1 << _adLoadAttempts, 30));
+            Future.delayed(delay, () {
+              if (mounted) {
+                _loadRewardedAd();
+              }
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showRewardDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Congratulations!'),
+        content: const Text('Free color saving has been enabled!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startSpin() {
+    if (_isSpinning) return;
+
+    if (_rewardedAd != null) {
+      _rewardedAd!.show(
+        onUserEarnedReward: (_, reward) {
+          setState(() {
+            _isRewarded = true;
+            _isSpinning = true;
+          });
+          _spinController.forward(from: 0);
+        },
+      );
+    } else {
+      if (_isAdLoading) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please wait while we prepare your reward...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      // Check if we should reset the attempt counter
+      if (_lastAdLoadTime != null) {
+        final timeSinceLastLoad = DateTime.now().difference(_lastAdLoadTime!);
+        if (timeSinceLastLoad > const Duration(minutes: 5)) {
+          _adLoadAttempts = 0;
+        }
+      }
+
+      if (_adLoadAttempts >= maxAdLoadAttempts) {
+        final timeSinceLastLoad = _lastAdLoadTime != null
+            ? DateTime.now().difference(_lastAdLoadTime!)
+            : const Duration(minutes: 6);
+
+        if (timeSinceLastLoad > const Duration(minutes: 5)) {
+          _adLoadAttempts = 0;
+          _loadRewardedAd();
+        } else {
+          final minutesLeft = 5 - timeSinceLastLoad.inMinutes;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Please try again in $minutesLeft minutes'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('Preparing your reward...'),
+            ],
+          ),
+        ),
+      );
+
+      // Try to load ad again
+      _loadRewardedAd();
+
+      // Close dialog after 3 seconds if ad still not ready
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+          if (_rewardedAd == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please try again in a moment'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      });
+    }
   }
 }
 
