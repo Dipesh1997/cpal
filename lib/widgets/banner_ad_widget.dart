@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import '../services/ad_service.dart';
 
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({Key? key}) : super(key: key);
@@ -13,6 +12,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isLoaded = false;
 
+  get AdService => null;
+
   @override
   void initState() {
     super.initState();
@@ -20,14 +21,18 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadBannerAd() {
-    _bannerAd = AdService.createBannerAd()
-      ..load().then((_) {
+    _bannerAd = AdService.createBannerAd(
+      onAdLoaded: (ad) {
         if (mounted) {
           setState(() {
             _isLoaded = true;
           });
         }
-      });
+      },
+      onAdFailedToLoad: (ad, error) {
+        ad.dispose();
+      },
+    )..load();
   }
 
   @override

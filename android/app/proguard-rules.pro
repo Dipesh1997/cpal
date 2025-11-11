@@ -1,3 +1,23 @@
+# Keep Flutter embedding and plugin registrant
+-keep class io.flutter.** { *; }
+-keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+
+# Keep Google Mobile Ads SDK public APIs
+-keep class com.google.android.gms.ads.** { *; }
+-keep interface com.google.android.gms.ads.** { *; }
+
+# Keep AndroidX annotations and lifecycle classes used via reflection
+-keep class androidx.lifecycle.DefaultLifecycleObserver { *; }
+-keep class androidx.annotation.** { *; }
+
+# Don't warn about Kotlin metadata in AARs
+-dontwarn kotlin.**
+-dontwarn org.jetbrains.annotations.**
+
+# Optimize aggressively but keep class/method names where needed for reflection
+-optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 # Flutter specific rules
 -keep class io.flutter.app.** { *; }
 -keep class io.flutter.plugin.** { *; }

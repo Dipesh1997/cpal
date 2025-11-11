@@ -10,16 +10,16 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
     namespace = "com.color.paletteasian"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -43,22 +43,19 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
-            shrinkResources false
-            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
-    bundle {
-        language {
-            enableSplit = true
+    // Limit native ABIs in release to reduce bundle size
+    defaultConfig {
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a"
         }
-        density {
-            enableSplit = true
-        }
-        abi {
-            enableSplit = true
-        }
+        // If your app supports only English, keep just 'en' resources to shrink size.
+        // resConfigs "en"
     }
 }
 
@@ -69,6 +66,10 @@ flutter {
 dependencies {
     // Add WebView dependency
     implementation "androidx.webkit:webkit:1.8.0"
+    // Use Play Feature Delivery APIs instead of deprecated Play Core
+    implementation "com.google.android.play:feature-delivery:2.1.0"
+    // Provide Play Core classes at compile time only to satisfy R8 (not packaged in AAB)
+    compileOnly "com.google.android.play:core:1.10.3"
     // Remove all custom dependencies - let Flutter manage them
     // implementation "androidx.annotation:annotation:1.5.0"
     // implementation "io.flutter:flutter_embedding_debug:1.0.0-3316dd8728"
