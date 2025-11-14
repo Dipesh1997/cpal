@@ -1239,7 +1239,8 @@ class _AboutPageState extends State<AboutPage> {
     // Test ID: ca-app-pub-3940256099942544/6300978111
     // Format: ca-app-pub-PUBLISHER_ID/AD_UNIT_ID
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // Test banner ad unit ID
+      adUnitId:
+          'ca-app-pub-3940256099942544/6300978111', // Test banner ad unit ID
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -1267,7 +1268,8 @@ class _AboutPageState extends State<AboutPage> {
     // Test ID: ca-app-pub-3940256099942544/5224354917
     // Format: ca-app-pub-PUBLISHER_ID/AD_UNIT_ID
     RewardedAd.load(
-      adUnitId: 'ca-app-pub-3940256099942544/5224354917', // Test rewarded ad unit ID
+      adUnitId:
+          'ca-app-pub-3940256099942544/5224354917', // Test rewarded ad unit ID
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -1372,7 +1374,7 @@ class _AboutPageState extends State<AboutPage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Version 1.0.23+23',
+              'Version 1.0.34+34',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
