@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'color_detail_page.dart';
 import 'favorites_page.dart';
@@ -15,10 +16,19 @@ import 'woodcolors.dart';
 import 'ncscolors.dart';
 import 'dart:math' as math;
 import 'package:share_plus/share_plus.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 // Main entry point for the Color Palette application
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize Google Mobile Ads only on mobile platforms (not web)
+  if (!kIsWeb) {
+    try {
+      await MobileAds.instance.initialize();
+    } catch (e) {
+      print('Failed to initialize Mobile Ads: $e');
+    }
+  }
   runApp(const MyApp());
 }
 
@@ -78,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     // Show results after typing
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
           _showResults = true;
@@ -87,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     // Navigate to main screen after animation
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const ColorPalettePage()),
@@ -222,6 +232,17 @@ class _SplashScreenState extends State<SplashScreen>
                           ],
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'By Golden Paints',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.yellowAccent,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -1189,8 +1210,125 @@ class _OpusTabViewState extends State<OpusTabView>
 }
 
 // Add AboutPage after ColorPalettePage
-class AboutPage extends StatelessWidget {
+class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
+  RewardedAd? _rewardedAd;
+  bool _isRewardedAdReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Only load ads on mobile platforms (not web)
+    if (!kIsWeb) {
+      _loadBannerAd();
+      _loadRewardedAd();
+    }
+  }
+
+  void _loadBannerAd() {
+    // Using test ad unit ID for development
+    // Replace with your actual banner ad unit ID for production
+    // Test ID: ca-app-pub-3940256099942544/6300978111
+    // Format: ca-app-pub-PUBLISHER_ID/AD_UNIT_ID
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // Test banner ad unit ID
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          print('Banner ad loaded successfully');
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          print('Failed to load banner ad: $error');
+          ad.dispose();
+          setState(() {
+            _isBannerAdReady = false;
+          });
+        },
+      ),
+    )..load();
+  }
+
+  void _loadRewardedAd() {
+    // Load rewarded video ad
+    // Using test ad unit ID for development
+    // Replace with your actual rewarded ad unit ID for production
+    // Test ID: ca-app-pub-3940256099942544/5224354917
+    // Format: ca-app-pub-PUBLISHER_ID/AD_UNIT_ID
+    RewardedAd.load(
+      adUnitId: 'ca-app-pub-3940256099942544/5224354917', // Test rewarded ad unit ID
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          print('Rewarded ad loaded successfully');
+          setState(() {
+            _rewardedAd = ad;
+            _isRewardedAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (error) {
+          print('Failed to load rewarded ad: $error');
+          setState(() {
+            _isRewardedAdReady = false;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showRewardedAd() {
+    if (_rewardedAd != null && _isRewardedAdReady) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _loadRewardedAd(); // Reload for next time
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Failed to show rewarded ad: $error');
+          ad.dispose();
+          _loadRewardedAd(); // Reload for next time
+        },
+      );
+
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          // Handle reward
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Reward earned: ${reward.amount} ${reward.type}'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Video ad is not ready yet. Please try again later.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    _rewardedAd?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1238,6 +1376,69 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Ad Button/Container
+            Container(
+              width: double.infinity,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: _isBannerAdReady && _bannerAd != null
+                  ? SizedBox(
+                      width: _bannerAd!.size.width.toDouble(),
+                      height: _bannerAd!.size.height.toDouble(),
+                      child: AdWidget(ad: _bannerAd!),
+                    )
+                  : Container(
+                      height: 50,
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Loading ad...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 16),
+            // Video Ad Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isRewardedAdReady ? _showRewardedAd : null,
+                icon: const Icon(Icons.play_circle_outline),
+                label: const Text(
+                  'Watch Video Ad',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  disabledForegroundColor: Colors.grey[600],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
