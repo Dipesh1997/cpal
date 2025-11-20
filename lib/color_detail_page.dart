@@ -112,7 +112,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 color['value'],
               );
               double similarityPercentage =
-                  _calculateSimilarityPercentage(distance);
+              _calculateSimilarityPercentage(distance);
               allSimilarColors.add({
                 ...color,
                 'similarity': distance,
@@ -133,7 +133,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
               color['value'],
             );
             double similarityPercentage =
-                _calculateSimilarityPercentage(distance);
+            _calculateSimilarityPercentage(distance);
             allSimilarColors.add({
               ...color,
               'similarity': distance,
@@ -289,8 +289,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                       color: color['similarityPercentage'] >= 90
                           ? Colors.green
                           : color['similarityPercentage'] >= 75
-                              ? Colors.orange
-                              : Colors.red,
+                          ? Colors.orange
+                          : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -321,6 +321,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 style: const TextStyle(
                   color: Colors.yellow,
                   fontWeight: FontWeight.bold,
+                  backgroundColor: Colors.black,
                 ),
               ),
             ),
@@ -366,7 +367,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                       },
                       backgroundColor: Colors.white.withOpacity(0.8),
                       child:
-                          const Icon(Icons.fullscreen, color: Colors.black87),
+                      const Icon(Icons.fullscreen, color: Colors.black87),
                     ),
                   ),
                 ],

@@ -83,12 +83,12 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Simulate typing animation
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 400), () {
       _startTypingAnimation();
     });
 
     // Show results after typing
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() {
           _showResults = true;
@@ -97,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     // Navigate to main screen after animation
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const ColorPalettePage()),
@@ -241,6 +241,7 @@ class _SplashScreenState extends State<SplashScreen>
                         fontWeight: FontWeight.w500,
                         color: Colors.yellowAccent,
                         fontStyle: FontStyle.italic,
+                        backgroundColor: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -1374,7 +1375,7 @@ class _AboutPageState extends State<AboutPage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Version 1.0.37+37',
+              'Version 1.0.38+38',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
