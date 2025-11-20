@@ -16,11 +16,22 @@ import 'woodcolors.dart';
 import 'ncscolors.dart';
 import 'dart:math' as math;
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 // Main entry point for the Color Palette application
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Enable edge-to-edge display
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+
   // Initialize Google Mobile Ads only on mobile platforms (not web)
   if (!kIsWeb) {
     try {
@@ -1375,7 +1386,7 @@ class _AboutPageState extends State<AboutPage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Version 1.0.38+38',
+              'Version 1.0.40+40',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
