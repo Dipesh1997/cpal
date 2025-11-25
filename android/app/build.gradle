@@ -51,9 +51,9 @@ android {
 
     // Limit native ABIs in release to reduce bundle size
     defaultConfig {
-        ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a"
-        }
+        // ndk {
+        //     abiFilters "arm64-v8a", "armeabi-v7a"
+        // }
         // If your app supports only English, keep just 'en' resources to shrink size.
         // resConfigs "en"
     }

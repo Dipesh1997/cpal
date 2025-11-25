@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math';
 import 'screens/full_screen_color_page.dart';
 import 'lightcolors.dart';
@@ -32,6 +34,9 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   bool _isFavorite = false;
   bool _isExpanded = false;
   List<Map<String, dynamic>> _similarColors = [];
+  
+  BannerAd? _bannerAd;
+  bool _isBannerAdReady = false;
 
   // Use a static cache for color conversion
   static final Map<String, Color> _colorCache = {};
@@ -41,6 +46,38 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     super.initState();
     _isFavorite = widget.isFavorite;
     _findSimilarColors();
+    
+    if (!kIsWeb) {
+      _loadBannerAd();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-6710120263757804/9278492126', // Test banner ad unit ID
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          print('Failed to load banner ad: $error');
+          ad.dispose();
+          setState(() {
+            _isBannerAdReady = false;
+          });
+        },
+      ),
+    )..load();
   }
 
   void _handleFavoriteToggle() {
@@ -396,6 +433,19 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 ..._similarColors.map((color) => _buildSimilarColorCard(color)),
               ],
             ),
+            const SizedBox(height: 24),
+            if (_isBannerAdReady && _bannerAd != null)
+              Container(
+                width: double.infinity,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: SizedBox(
+                  width: _bannerAd!.size.width.toDouble(),
+                  height: _bannerAd!.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                ),
+              ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

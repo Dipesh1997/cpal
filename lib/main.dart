@@ -34,11 +34,12 @@ void main() async {
 
   // Initialize Google Mobile Ads only on mobile platforms (not web)
   if (!kIsWeb) {
-    try {
-      await MobileAds.instance.initialize();
-    } catch (e) {
-      print('Failed to initialize Mobile Ads: $e');
-    }
+    // Fire and forget - don't await to unblock startup
+    MobileAds.instance.initialize().then((_) {
+      debugPrint('Mobile Ads Initialized');
+    }).catchError((error) {
+      debugPrint('Failed to initialize Mobile Ads: $error');
+    });
   }
   runApp(const MyApp());
 }
@@ -93,13 +94,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Simulate typing animation
-    Future.delayed(const Duration(milliseconds: 400), () {
-      _startTypingAnimation();
+    // Simulate typing animation - faster start
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) _startTypingAnimation();
     });
 
-    // Show results after typing
-    Future.delayed(const Duration(milliseconds: 1000), () {
+    // Show results after typing - faster
+    Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) {
         setState(() {
           _showResults = true;
@@ -107,8 +108,8 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    // Navigate to main screen after animation
-    Future.delayed(const Duration(seconds: 2), () {
+    // Navigate to main screen after animation - reduced from 2s to 1.2s
+    Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const ColorPalettePage()),
@@ -126,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
             _currentIndex++;
           });
         }
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(const Duration(milliseconds: 50)); // Faster typing
         return true;
       } else {
         if (mounted) {
@@ -553,120 +554,107 @@ class _ColorPalettePageState extends State<ColorPalettePage>
 
       List<int> sortedPages = colorsByPage.keys.toList()..sort();
 
-      return SingleChildScrollView(
-        child: ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(8),
-          itemCount: sortedPages.length,
-          itemBuilder: (context, pageIndex) {
-            try {
-              if (pageIndex >= sortedPages.length) {
-                return const SizedBox.shrink();
-              }
-
-              final pageNumber = sortedPages[pageIndex];
-              final pageColors = colorsByPage[pageNumber]!;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'Page $pageNumber',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+      return CustomScrollView(
+        key: PageStorageKey<String>(category),
+        slivers: [
+          const SliverPadding(padding: EdgeInsets.only(top: 8)),
+          for (var pageIndex = 0; pageIndex < sortedPages.length; pageIndex++) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Text(
+                  'Page ${sortedPages[pageIndex]}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.5,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: pageColors.length,
-                    itemBuilder: (context, index) {
-                      try {
-                        if (index >= pageColors.length) {
-                          return const SizedBox.shrink();
-                        }
-
-                        var color = pageColors[index];
-                        return Card(
-                          elevation: 4,
-                          child: InkWell(
-                            onTap: () {
-                              try {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ColorDetailPage(
-                                      color: {
-                                        ...color,
-                                        'tab': category,
-                                      },
-                                      onFavoriteToggle: toggleFavorite,
-                                      isFavorite: isFavorite(color['number']),
-                                      allColors: colors,
-                                    ),
-                                  ),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Error loading color details'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: hexToColor(color['value']),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    color['number'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      } catch (e) {
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.5,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    try {
+                      final pageColors = colorsByPage[sortedPages[pageIndex]]!;
+                      if (index >= pageColors.length) {
                         return const SizedBox.shrink();
                       }
-                    },
-                  ),
-                ],
-              );
-            } catch (e) {
-              return const SizedBox.shrink();
-            }
-          },
-        ),
+
+                      var color = pageColors[index];
+                      return Card(
+                        elevation: 4,
+                        child: InkWell(
+                          onTap: () {
+                            try {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ColorDetailPage(
+                                    color: {
+                                      ...color,
+                                      'tab': category,
+                                    },
+                                    onFavoriteToggle: toggleFavorite,
+                                    isFavorite: isFavorite(color['number']),
+                                    allColors: colors,
+                                  ),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Error loading color details'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: hexToColor(color['value']),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  color['number'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      return const SizedBox.shrink();
+                    }
+                  },
+                  childCount: colorsByPage[sortedPages[pageIndex]]?.length ?? 0,
+                ),
+              ),
+            ),
+          ],
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+        ],
       );
     } catch (e) {
       return const Center(
