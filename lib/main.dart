@@ -18,11 +18,12 @@ import 'dart:math' as math;
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 // Main entry point for the Color Palette application
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Enable edge-to-edge display
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -282,15 +283,26 @@ class _SplashScreenState extends State<SplashScreen>
 }
 
 /// Main page of the Color Palette application
-class ColorPalettePage extends StatefulWidget {
+class ColorPalettePage extends StatelessWidget {
   const ColorPalettePage({super.key});
 
   @override
-  State<ColorPalettePage> createState() => _ColorPalettePageState();
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      builder: (context) => const ColorPaletteContent(),
+    );
+  }
 }
 
-/// State class for ColorPalettePage
-class _ColorPalettePageState extends State<ColorPalettePage>
+class ColorPaletteContent extends StatefulWidget {
+  const ColorPaletteContent({super.key});
+
+  @override
+  State<ColorPaletteContent> createState() => _ColorPaletteContentState();
+}
+
+/// State class for ColorPaletteContent
+class _ColorPaletteContentState extends State<ColorPaletteContent>
     with TickerProviderStateMixin {
   // Color data and search state
   late Map<String, List<dynamic>> colors;
@@ -315,6 +327,10 @@ class _ColorPalettePageState extends State<ColorPalettePage>
   // Preloaded colors for ColorTablePage
   static Map<String, List<dynamic>>? _preloadedTableColors;
 
+  // Showcase keys
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _tabKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -323,6 +339,20 @@ class _ColorPalettePageState extends State<ColorPalettePage>
     _mainTabController.addListener(_handleMainTabChange);
     _loadFavorites();
     _preloadTableColors();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowShowcase();
+    });
+  }
+
+  Future<void> _checkAndShowShowcase() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool hasShownTutorial = prefs.getBool('hasShownTutorial') ?? false;
+
+    if (!hasShownTutorial && mounted) {
+      ShowCaseWidget.of(context).startShowCase([_searchKey, _tabKey]);
+      await prefs.setBool('hasShownTutorial', true);
+    }
   }
 
   @override
@@ -558,7 +588,9 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         key: PageStorageKey<String>(category),
         slivers: [
           const SliverPadding(padding: EdgeInsets.only(top: 8)),
-          for (var pageIndex = 0; pageIndex < sortedPages.length; pageIndex++) ...[
+          for (var pageIndex = 0;
+              pageIndex < sortedPages.length;
+              pageIndex++) ...[
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -698,11 +730,16 @@ class _ColorPalettePageState extends State<ColorPalettePage>
         length: visibleTabs.length,
         child: Column(
           children: [
-            TabBar(
-              isScrollable: true,
-              tabs: visibleTabs
-                  .map((tab) => Tab(text: tab.toUpperCase()))
-                  .toList(),
+            Showcase(
+              key: _tabKey,
+              description:
+                  'Switch between different color categories (Light, Medium, Dark, etc.)',
+              child: TabBar(
+                isScrollable: true,
+                tabs: visibleTabs
+                    .map((tab) => Tab(text: tab.toUpperCase()))
+                    .toList(),
+              ),
             ),
             Expanded(
               child: TabBarView(
@@ -840,15 +877,19 @@ class _ColorPalettePageState extends State<ColorPalettePage>
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search colors by name, number, or value...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
+                  child: Showcase(
+                    key: _searchKey,
+                    description: 'Search colors by name, number, or value',
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Search colors by name, number, or value...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        filterColors(value);
+                      },
                     ),
-                    onChanged: (value) {
-                      filterColors(value);
-                    },
                   ),
                 ),
               ],
@@ -1371,6 +1412,33 @@ class _AboutPageState extends State<AboutPage> {
             _buildFeatureCard(
               'Interactive Drawing',
               'Create and manipulate color polygons with AI-assisted tools.',
+            ),
+            const SizedBox(height: 16),
+            const SizedBox(height: 16),
+            const Text(
+              'How to Use',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildFeatureCard(
+              'Searching Colors',
+              'You can search for colors using their name, number, or hex value. Simply tap the search bar at the top and start typing.',
+            ),
+            _buildFeatureCard(
+              'Color Categories',
+              'Colors are organized into categories: Light, Medium, Dark, and others. Use the tabs below the search bar to switch between these categories.',
+            ),
+            _buildFeatureCard(
+              'Drawing Canvas',
+              'Create your own designs using the Drawing Canvas:\n'
+                  '• Add Background: Import an image to draw over.\n'
+                  '• Create Polygons: Tap "New" (+) and tap on the canvas to create points. Tap "Finish" (✓) to complete a shape.\n'
+                  '• Change Colors: Tap on any completed polygon to change its color or opacity.\n'
+                  '• Manage Walls: Use the list view to rename, delete, or edit specific walls.\n'
+                  '• Share: Export and share your creation with others.',
             ),
             const SizedBox(height: 16),
             const Text(

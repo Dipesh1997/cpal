@@ -17,6 +17,7 @@ import '../svcolors.dart';
 import '../opuscolors.dart';
 import '../ncscolors.dart';
 import '../woodcolors.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 /// A class representing a drawing point with its position and paint properties
 class DrawingPoint {
@@ -27,15 +28,26 @@ class DrawingPoint {
 }
 
 /// The main drawing canvas page widget that allows users to draw polygons and holes
-class DrawingCanvasPage extends StatefulWidget {
+class DrawingCanvasPage extends StatelessWidget {
   const DrawingCanvasPage({super.key});
 
   @override
-  State<DrawingCanvasPage> createState() => _DrawingCanvasPageState();
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      builder: (context) => const DrawingCanvasContent(),
+    );
+  }
+}
+
+class DrawingCanvasContent extends StatefulWidget {
+  const DrawingCanvasContent({super.key});
+
+  @override
+  State<DrawingCanvasContent> createState() => _DrawingCanvasContentState();
 }
 
 /// The state class for the drawing canvas page
-class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
+class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
   // Image picker instance for selecting background images
   final ImagePicker _picker = ImagePicker();
 
@@ -76,6 +88,14 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   // Add a GlobalKey for the canvas
   final GlobalKey _canvasKey = GlobalKey();
 
+  // Showcase Keys
+  final GlobalKey _addImageKey = GlobalKey();
+  final GlobalKey _addPolygonKey = GlobalKey();
+  final GlobalKey _finishPolygonKey = GlobalKey();
+  final GlobalKey _canvasShowcaseKey = GlobalKey();
+  final GlobalKey _wallsKey = GlobalKey();
+  final GlobalKey _shareKey = GlobalKey();
+
   // Add this property to store current color data
   Map<String, dynamic>? _currentColorData;
 
@@ -85,9 +105,52 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     super.initState();
     _loadColors();
     _loadFavorites();
-    // Show toast message after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkFavoritesAndTutorial();
+    });
+  }
+
+  Future<void> _checkFavoritesAndTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favorites = prefs.getStringList('favoriteColors') ?? [];
+
+    if (favorites.isEmpty) {
       if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('No Favorite Colors'),
+            content: const Text(
+                'You need to add some favorite colors before you can start drawing. Please go back and add some colors to your favorites.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Go back to previous screen
+                },
+                child: const Text('Go Back'),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      // Check for tutorial
+      bool hasShownTutorial = prefs.getBool('hasShownDrawingTutorial') ?? false;
+      if (!hasShownTutorial && mounted) {
+        ShowCaseWidget.of(context).startShowCase([
+          _addImageKey,
+          _addPolygonKey,
+          _canvasShowcaseKey,
+          _finishPolygonKey,
+          _wallsKey,
+          _shareKey,
+        ]);
+        await prefs.setBool('hasShownDrawingTutorial', true);
+      } else {
+        // Show toast message only if not showing tutorial
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -98,7 +161,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           ),
         );
       }
-    });
+    }
   }
 
   /// Loads color data from the colors.json file
@@ -852,17 +915,30 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             onPressed: _redoStack.isEmpty ? null : _redo,
             tooltip: 'Redo',
           ),
-          IconButton(
-            icon: const Icon(Icons.view_agenda),
-            onPressed: _showWallsDialog,
+          Showcase(
+            key: _wallsKey,
+            description:
+                'Manage your walls: rename, edit color, or delete them',
+            child: IconButton(
+              icon: const Icon(Icons.view_agenda),
+              onPressed: _showWallsDialog,
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.photo_library),
-            onPressed: _pickImage,
+          Showcase(
+            key: _addImageKey,
+            description: 'Add a background image to your canvas',
+            child: IconButton(
+              icon: const Icon(Icons.photo_library),
+              onPressed: _pickImage,
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _shareCanvas,
+          Showcase(
+            key: _shareKey,
+            description: 'Share your masterpiece with others',
+            child: IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: _shareCanvas,
+            ),
           ),
         ],
       ),
@@ -892,65 +968,72 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: RepaintBoundary(
-                        key: _canvasKey,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (!_isDrawingPolygon && !_isDrawingHole) {
-                              final tapPosition = _lastTapPosition;
-                              if (tapPosition != null) {
-                                for (int i = 0; i < _polygons.length; i++) {
-                                  final polygon = _polygons[i];
-                                  final points =
-                                      polygon['points'] as List<Offset>;
-                                  if (points.isNotEmpty &&
-                                      _isPointInPolygon(tapPosition, points)) {
-                                    setState(() {
-                                      _selectedPolygonIndex = i;
-                                    });
-                                    _showColorPicker();
-                                    break;
+                    child: Showcase(
+                      key: _canvasShowcaseKey,
+                      description:
+                          'Tap here to create points for your polygon. Tap on a completed polygon to change its color.',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: RepaintBoundary(
+                          key: _canvasKey,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (!_isDrawingPolygon && !_isDrawingHole) {
+                                final tapPosition = _lastTapPosition;
+                                if (tapPosition != null) {
+                                  for (int i = 0; i < _polygons.length; i++) {
+                                    final polygon = _polygons[i];
+                                    final points =
+                                        polygon['points'] as List<Offset>;
+                                    if (points.isNotEmpty &&
+                                        _isPointInPolygon(
+                                            tapPosition, points)) {
+                                      setState(() {
+                                        _selectedPolygonIndex = i;
+                                      });
+                                      _showColorPicker();
+                                      break;
+                                    }
                                   }
                                 }
                               }
-                            }
-                          },
-                          onTapDown: (details) {
-                            setState(() {
-                              _lastTapPosition = details.localPosition;
-                              if (_isDrawingPolygon || _isDrawingHole) {
-                                if (_isDrawingHole) {
-                                  _holePoints.add(details.localPosition);
-                                  // Force rebuild of hole points
-                                  _holePoints = List<Offset>.from(_holePoints);
-                                } else {
-                                  _points.add(details.localPosition);
-                                  // Force rebuild of polygon points
-                                  _points = List<Offset>.from(_points);
+                            },
+                            onTapDown: (details) {
+                              setState(() {
+                                _lastTapPosition = details.localPosition;
+                                if (_isDrawingPolygon || _isDrawingHole) {
+                                  if (_isDrawingHole) {
+                                    _holePoints.add(details.localPosition);
+                                    // Force rebuild of hole points
+                                    _holePoints =
+                                        List<Offset>.from(_holePoints);
+                                  } else {
+                                    _points.add(details.localPosition);
+                                    // Force rebuild of polygon points
+                                    _points = List<Offset>.from(_points);
+                                  }
                                 }
-                              }
-                            });
-                          },
-                          onTapUp: (details) {
-                            // Remove automatic finishing of polygon
-                          },
-                          onTapCancel: () {
-                            // Remove automatic finishing of polygon
-                          },
-                          child: CustomPaint(
-                            painter: _DrawingPainter(
-                              backgroundImage: renderedImage,
-                              polygons: _polygons,
-                              holes: _holes,
-                              isDrawingPolygon: _isDrawingPolygon,
-                              isDrawingHole: _isDrawingHole,
-                              currentPolygonColor: _currentPolygonColor,
-                              points: _points,
-                              holePoints: _holePoints,
+                              });
+                            },
+                            onTapUp: (details) {
+                              // Remove automatic finishing of polygon
+                            },
+                            onTapCancel: () {
+                              // Remove automatic finishing of polygon
+                            },
+                            child: CustomPaint(
+                              painter: _DrawingPainter(
+                                backgroundImage: renderedImage,
+                                polygons: _polygons,
+                                holes: _holes,
+                                isDrawingPolygon: _isDrawingPolygon,
+                                isDrawingHole: _isDrawingHole,
+                                currentPolygonColor: _currentPolygonColor,
+                                points: _points,
+                                holePoints: _holePoints,
+                              ),
+                              size: Size(width, height),
                             ),
-                            size: Size(width, height),
                           ),
                         ),
                       ),
@@ -965,24 +1048,32 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          FloatingActionButton(
-            heroTag: 'new',
-            onPressed: () {
-              setState(() {
-                _startNewPolygon();
-              });
-            },
-            child: const Icon(Icons.add),
+          Showcase(
+            key: _addPolygonKey,
+            description: 'Start drawing a new polygon',
+            child: FloatingActionButton(
+              heroTag: 'new',
+              onPressed: () {
+                setState(() {
+                  _startNewPolygon();
+                });
+              },
+              child: const Icon(Icons.add),
+            ),
           ),
           const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'finish',
-            onPressed: () {
-              setState(() {
-                _finishPolygon();
-              });
-            },
-            child: const Icon(Icons.check),
+          Showcase(
+            key: _finishPolygonKey,
+            description: 'Finish drawing the current polygon',
+            child: FloatingActionButton(
+              heroTag: 'finish',
+              onPressed: () {
+                setState(() {
+                  _finishPolygon();
+                });
+              },
+              child: const Icon(Icons.check),
+            ),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
