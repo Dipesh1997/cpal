@@ -2,15 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math';
-import 'screens/full_screen_color_page.dart';
-import 'lightcolors.dart';
-import 'mediumcolors.dart';
-import 'darkcolors.dart';
-import 'sacolors.dart';
-import 'svcolors.dart';
-import 'opuscolors.dart';
-import 'ncscolors.dart';
-import 'woodcolors.dart';
+import 'screens/full_screen_color_page.dart' show FullScreenColorPage;
 
 class ColorDetailPage extends StatefulWidget {
   final Map<String, dynamic> color;
@@ -19,12 +11,12 @@ class ColorDetailPage extends StatefulWidget {
   final bool isFavorite;
 
   const ColorDetailPage({
-    Key? key,
+    super.key,
     required this.color,
     required this.allColors,
     required this.onFavoriteToggle,
     required this.isFavorite,
-  }) : super(key: key);
+  });
 
   @override
   State<ColorDetailPage> createState() => _ColorDetailPageState();
@@ -34,7 +26,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
   bool _isFavorite = false;
   bool _isExpanded = false;
   List<Map<String, dynamic>> _similarColors = [];
-  
+
   BannerAd? _bannerAd;
   bool _isBannerAdReady = false;
 
@@ -46,7 +38,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     super.initState();
     _isFavorite = widget.isFavorite;
     _findSimilarColors();
-    
+
     if (!kIsWeb) {
       _loadBannerAd();
     }
@@ -60,7 +52,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
 
   void _loadBannerAd() {
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-6710120263757804/9278492126', // Test banner ad unit ID
+      adUnitId:
+          'ca-app-pub-6710120263757804/9278492126', // Test banner ad unit ID
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -140,7 +133,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
         currentTab == 'ncs' ||
         widget.color['number']?.toString().contains('-N') == true) {
       // For opus and ncs colors, show similar colors from light, medium, and dark tabs
-      ['light', 'medium', 'dark'].forEach((tab) {
+      for (var tab in ['light', 'medium', 'dark']) {
         if (widget.allColors.containsKey(tab)) {
           for (var color in widget.allColors[tab]!) {
             if (color is Map<String, dynamic>) {
@@ -149,7 +142,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                 color['value'],
               );
               double similarityPercentage =
-              _calculateSimilarityPercentage(distance);
+                  _calculateSimilarityPercentage(distance);
               allSimilarColors.add({
                 ...color,
                 'similarity': distance,
@@ -159,7 +152,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
             }
           }
         }
-      });
+      }
     } else {
       // For light/medium/dark colors, show similar colors from opus tab only
       if (widget.allColors.containsKey('opus')) {
@@ -170,7 +163,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
               color['value'],
             );
             double similarityPercentage =
-            _calculateSimilarityPercentage(distance);
+                _calculateSimilarityPercentage(distance);
             allSimilarColors.add({
               ...color,
               'similarity': distance,
@@ -326,8 +319,8 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                       color: color['similarityPercentage'] >= 90
                           ? Colors.green
                           : color['similarityPercentage'] >= 75
-                          ? Colors.orange
-                          : Colors.red,
+                              ? Colors.orange
+                              : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -404,7 +397,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                       },
                       backgroundColor: Colors.white.withOpacity(0.8),
                       child:
-                      const Icon(Icons.fullscreen, color: Colors.black87),
+                          const Icon(Icons.fullscreen, color: Colors.black87),
                     ),
                   ),
                 ],

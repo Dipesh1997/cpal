@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -80,10 +79,10 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
   int? _selectedPolygonIndex;
 
   // Undo/redo stacks
-  List<List<Map<String, dynamic>>> _undoStack = [];
-  List<List<Map<String, dynamic>>> _redoStack = [];
-  List<List<Map<String, dynamic>>> _undoHolesStack = [];
-  List<List<Map<String, dynamic>>> _redoHolesStack = [];
+  final List<List<Map<String, dynamic>>> _undoStack = [];
+  final List<List<Map<String, dynamic>>> _redoStack = [];
+  final List<List<Map<String, dynamic>>> _undoHolesStack = [];
+  final List<List<Map<String, dynamic>>> _redoHolesStack = [];
 
   // Add a GlobalKey for the canvas
   final GlobalKey _canvasKey = GlobalKey();
@@ -95,6 +94,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
   final GlobalKey _canvasShowcaseKey = GlobalKey();
   final GlobalKey _wallsKey = GlobalKey();
   final GlobalKey _shareKey = GlobalKey();
+  final GlobalKey _holeKey = GlobalKey();
 
   // Add this property to store current color data
   Map<String, dynamic>? _currentColorData;
@@ -312,8 +312,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
 
   /// Saves the current state to the undo stack
   void _saveState() {
-    _undoStack.add(List<Map<String, dynamic>>.from(_polygons));
-    _undoHolesStack.add(List<Map<String, dynamic>>.from(_holes));
+    _undoStack.add(_polygons.map((e) => Map<String, dynamic>.from(e)).toList());
+    _undoHolesStack
+        .add(_holes.map((e) => Map<String, dynamic>.from(e)).toList());
     _redoStack.clear();
     _redoHolesStack.clear();
   }
@@ -366,6 +367,23 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         // Force rebuild of the canvas
         _polygons = List<Map<String, dynamic>>.from(_polygons);
         _holes = List<Map<String, dynamic>>.from(_holes);
+
+        // Check for hole tutorial
+        if (!_isDrawingHole && _polygons.isNotEmpty) {
+          _checkHoleTutorial();
+        }
+      });
+    }
+  }
+
+  Future<void> _checkHoleTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool hasShownHoleTutorial = prefs.getBool('hasShownHoleTutorial') ?? false;
+
+    if (!hasShownHoleTutorial && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ShowCaseWidget.of(context).startShowCase([_holeKey]);
+        prefs.setBool('hasShownHoleTutorial', true);
       });
     }
   }
@@ -496,9 +514,10 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: List.generate(10, (index) {
-                              final opacity = (index + 1) * 0.1;
-                              final isSelected = _opacity == opacity;
+                            children: [0.1, 0.25, 0.4, 0.55, 0.75, 1.0]
+                                .map((opacity) {
+                              final isSelected =
+                                  (_opacity - opacity).abs() < 0.01;
                               return Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 4),
@@ -566,7 +585,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                                   ),
                                 ),
                               );
-                            }),
+                            }).toList(),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -576,7 +595,17 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                           max: 1.0,
                           divisions: 100,
                           label: '${(_opacity * 100).round()}%',
+                          onChangeStart: (value) {
+                            if (_selectedPolygonIndex != null) {
+                              _saveState();
+                            }
+                          },
                           onChanged: (value) {
+                            // Update the modal state to reflect slider change
+                            setModalState(() {
+                              _opacity = value;
+                            });
+                            // Update the parent state to reflect changes on canvas
                             setState(() {
                               _opacity = value;
                               if (_selectedPolygonIndex != null) {
@@ -607,8 +636,10 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                             });
                           },
                           onChangeEnd: (value) {
+                            if (_selectedPolygonIndex == null) {
+                              _finishPolygon();
+                            }
                             Navigator.pop(context);
-                            _finishPolygon();
                           },
                         ),
                       ],
@@ -1076,15 +1107,20 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
             ),
           ),
           const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'hole',
-            onPressed: () {
-              setState(() {
-                _createHole();
-              });
-            },
-            child: const Icon(Icons.remove),
-          ),
+          if (_polygons.isNotEmpty)
+            Showcase(
+              key: _holeKey,
+              description: 'Create a hole in the selected polygon',
+              child: FloatingActionButton(
+                heroTag: 'hole',
+                onPressed: () {
+                  setState(() {
+                    _createHole();
+                  });
+                },
+                child: const Icon(Icons.remove),
+              ),
+            ),
         ],
       ),
     );
@@ -1185,7 +1221,7 @@ class _DrawingPainter extends CustomPainter {
       _imageTransform = _calculateImageTransform(size);
       canvas.transform(_imageTransform!.storage);
       canvas.drawImage(backgroundImage!, Offset.zero, Paint());
-      canvas.transform(Matrix4.identity().storage);
+      // Note: canvas remains transformed for subsequent drawing
     }
 
     final paint = Paint()
@@ -1212,85 +1248,36 @@ class _DrawingPainter extends CustomPainter {
         final polygonHoles = holes.where((hole) {
           if (hole['points'].isEmpty) return false;
           final holeCenter = _calculateCenter(hole['points'] as List<Offset>);
-          return _isPointInPolygon(holeCenter, transformedPoints);
+          // Use raw points (Screen Space) for check, as holeCenter is also in Screen Space
+          return _isPointInPolygon(
+              holeCenter, polygon['points'] as List<Offset>);
         }).toList();
 
         // Create the final path by subtracting holes from the polygon
         var finalPath = Path();
         finalPath.addPath(polygonPath, Offset.zero);
 
-        // Draw the filled polygon with holes
-        if (backgroundImage != null) {
-          // If there's a background image, draw the polygon with holes
-          for (var hole in polygonHoles) {
-            final holePath = Path();
-            final transformedHolePoints = (hole['points'] as List<Offset>)
-                .map((point) => _transformPoint(
-                    point, _imageTransform ?? Matrix4.identity()))
-                .toList();
-            holePath.moveTo(
-                transformedHolePoints[0].dx, transformedHolePoints[0].dy);
-            for (var i = 1; i < transformedHolePoints.length; i++) {
-              holePath.lineTo(
-                  transformedHolePoints[i].dx, transformedHolePoints[i].dy);
-            }
-            holePath.close();
-            finalPath =
-                Path.combine(PathOperation.difference, finalPath, holePath);
+        // Subtract holes
+        for (var hole in polygonHoles) {
+          final holePath = Path();
+          final transformedHolePoints = (hole['points'] as List<Offset>)
+              .map((point) =>
+                  _transformPoint(point, _imageTransform ?? Matrix4.identity()))
+              .toList();
+          holePath.moveTo(
+              transformedHolePoints[0].dx, transformedHolePoints[0].dy);
+          for (var i = 1; i < transformedHolePoints.length; i++) {
+            holePath.lineTo(
+                transformedHolePoints[i].dx, transformedHolePoints[i].dy);
           }
-
-          // Draw the polygon with holes
-          canvas.drawPath(finalPath, Paint()..color = polygon['color']);
-          canvas.drawPath(finalPath, paint);
-
-          // Draw the background image through the holes with full opacity
-          for (var hole in polygonHoles) {
-            final holePath = Path();
-            final transformedHolePoints = (hole['points'] as List<Offset>)
-                .map((point) => _transformPoint(
-                    point, _imageTransform ?? Matrix4.identity()))
-                .toList();
-            holePath.moveTo(
-                transformedHolePoints[0].dx, transformedHolePoints[0].dy);
-            for (var i = 1; i < transformedHolePoints.length; i++) {
-              holePath.lineTo(
-                  transformedHolePoints[i].dx, transformedHolePoints[i].dy);
-            }
-            holePath.close();
-
-            // Save the current canvas state
-            canvas.save();
-            // Clip to the hole path
-            canvas.clipPath(holePath);
-            // Draw the background image with full opacity
-            canvas.transform(_imageTransform!.storage);
-            canvas.drawImage(backgroundImage!, Offset.zero,
-                Paint()..color = Colors.white.withOpacity(1.0));
-            canvas.transform(Matrix4.identity().storage);
-            // Restore the canvas state
-            canvas.restore();
-          }
-        } else {
-          // If no background image, just draw the polygon with transparent holes
-          for (var hole in polygonHoles) {
-            final holePath = Path();
-            final transformedHolePoints = (hole['points'] as List<Offset>)
-                .map((point) => _transformPoint(
-                    point, _imageTransform ?? Matrix4.identity()))
-                .toList();
-            holePath.moveTo(
-                transformedHolePoints[0].dx, transformedHolePoints[0].dy);
-            for (var i = 1; i < transformedHolePoints.length; i++) {
-              holePath.lineTo(
-                  transformedHolePoints[i].dx, transformedHolePoints[i].dy);
-            }
-            holePath.close();
-            finalPath =
-                Path.combine(PathOperation.difference, finalPath, holePath);
-          }
-          canvas.drawPath(finalPath, Paint()..color = polygon['color']);
-          canvas.drawPath(finalPath, paint);
+          holePath.close();
+          finalPath =
+              Path.combine(PathOperation.difference, finalPath, holePath);
         }
+
+        // Draw the filled polygon (holes will be transparent, showing background)
+        canvas.drawPath(finalPath, Paint()..color = polygon['color']);
+        canvas.drawPath(finalPath, paint);
 
         // Draw the hole outlines
         for (var hole in polygonHoles) {

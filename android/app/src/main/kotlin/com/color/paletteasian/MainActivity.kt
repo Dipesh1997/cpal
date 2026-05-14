@@ -1,14 +1,14 @@
 package com.color.paletteasian
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import android.os.Bundle
-import androidx.core.view.WindowCompat
+import androidx.activity.enableEdgeToEdge
 import android.webkit.WebView
 
-class MainActivity: FlutterActivity() {
+class MainActivity: FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         
         // Initialize WebView with the correct context
         try {

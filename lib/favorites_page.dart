@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'color_detail_page.dart';
-import 'lightcolors.dart';
-import 'mediumcolors.dart';
-import 'darkcolors.dart';
-import 'sacolors.dart';
-import 'svcolors.dart';
-import 'opuscolors.dart';
 import 'ncscolors.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'woodcolors.dart';
 
-class FavoritesPage extends StatefulWidget {
+class FavoritesPage extends StatelessWidget {
   final Map<String, dynamic> allColors;
   final Set<String> favoriteColorNumbers;
   final Function(String) onFavoriteToggle;
@@ -22,10 +18,34 @@ class FavoritesPage extends StatefulWidget {
   });
 
   @override
-  State<FavoritesPage> createState() => _FavoritesPageState();
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      builder: (context) => FavoritesContent(
+        allColors: allColors,
+        favoriteColorNumbers: favoriteColorNumbers,
+        onFavoriteToggle: onFavoriteToggle,
+      ),
+    );
+  }
 }
 
-class _FavoritesPageState extends State<FavoritesPage>
+class FavoritesContent extends StatefulWidget {
+  final Map<String, dynamic> allColors;
+  final Set<String> favoriteColorNumbers;
+  final Function(String) onFavoriteToggle;
+
+  const FavoritesContent({
+    super.key,
+    required this.allColors,
+    required this.favoriteColorNumbers,
+    required this.onFavoriteToggle,
+  });
+
+  @override
+  State<FavoritesContent> createState() => _FavoritesContentState();
+}
+
+class _FavoritesContentState extends State<FavoritesContent>
     with TickerProviderStateMixin {
   List<Map<String, dynamic>> _favoriteColors = [];
   List<Map<String, dynamic>> _woodFavoriteColors = [];
@@ -33,12 +53,36 @@ class _FavoritesPageState extends State<FavoritesPage>
   late TabController _tabController;
   late Map<String, List<dynamic>> _allColorsWithWood;
 
+  // Showcase Keys
+  final GlobalKey _tabsKey = GlobalKey();
+  final GlobalKey _gridKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _initializeColors();
     _updateFavoriteColors();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkTutorial();
+    });
+  }
+
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool hasShownTutorial = prefs.getBool('hasShownFavoritesTutorial') ?? false;
+
+    if (!hasShownTutorial && mounted) {
+      // Only start showcase if there are items to show
+      if (_favoriteColors.isNotEmpty || _woodFavoriteColors.isNotEmpty) {
+        ShowCaseWidget.of(context).startShowCase([
+          _tabsKey,
+          _gridKey,
+        ]);
+        await prefs.setBool('hasShownFavoritesTutorial', true);
+      }
+    }
   }
 
   void _initializeColors() {
@@ -66,7 +110,7 @@ class _FavoritesPageState extends State<FavoritesPage>
   }
 
   @override
-  void didUpdateWidget(FavoritesPage oldWidget) {
+  void didUpdateWidget(FavoritesContent oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.favoriteColorNumbers != widget.favoriteColorNumbers ||
         oldWidget.allColors != widget.allColors) {
@@ -181,73 +225,77 @@ class _FavoritesPageState extends State<FavoritesPage>
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      physics: const AlwaysScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1.5,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: colors.length,
-      itemBuilder: (context, index) {
-        final color = colors[index];
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ColorDetailPage(
-                  color: {
-                    ...color,
-                    'tab': color['category'],
-                  },
-                  onFavoriteToggle: _handleFavoriteToggle,
-                  isFavorite: true,
-                  allColors: _allColorsWithWood.map(
-                      (key, value) => MapEntry(key, value as List<dynamic>)),
+    return Showcase(
+      key: _gridKey,
+      description: 'Tap on a color to view details',
+      child: GridView.builder(
+        padding: const EdgeInsets.all(8),
+        physics: const AlwaysScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 1.5,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+        ),
+        itemCount: colors.length,
+        itemBuilder: (context, index) {
+          final color = colors[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ColorDetailPage(
+                    color: {
+                      ...color,
+                      'tab': color['category'],
+                    },
+                    onFavoriteToggle: _handleFavoriteToggle,
+                    isFavorite: true,
+                    allColors: _allColorsWithWood
+                        .map((key, value) => MapEntry(key, value)),
+                  ),
+                ),
+              );
+            },
+            child: Card(
+              elevation: 4,
+              color: hexToColor(color['value']),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            color['name'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${color['number']} - ${color['value']}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          },
-          child: Card(
-            elevation: 4,
-            color: hexToColor(color['value']),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          color['name'],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${color['number']} - ${color['value']}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -256,12 +304,19 @@ class _FavoritesPageState extends State<FavoritesPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorite Colors'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'All Favorites'),
-            Tab(text: 'Wood Colors'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Showcase(
+            key: _tabsKey,
+            description: 'Switch between All Favorites and Wood Colors',
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'All Favorites'),
+                Tab(text: 'Wood Colors'),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(

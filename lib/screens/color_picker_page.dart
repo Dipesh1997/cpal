@@ -1,27 +1,45 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../color_detail_page.dart';
+import 'package:showcaseview/showcaseview.dart';
 
-class ColorPickerPage extends StatefulWidget {
+class ColorPickerPage extends StatelessWidget {
   final Map<String, List<dynamic>>? initialColors;
 
-  const ColorPickerPage({Key? key, this.initialColors}) : super(key: key);
+  const ColorPickerPage({super.key, this.initialColors});
 
   @override
-  State<ColorPickerPage> createState() => _ColorPickerPageState();
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      builder: (context) => ColorPickerContent(initialColors: initialColors),
+    );
+  }
 }
 
-class _ColorPickerPageState extends State<ColorPickerPage> {
+class ColorPickerContent extends StatefulWidget {
+  final Map<String, List<dynamic>>? initialColors;
+
+  const ColorPickerContent({super.key, this.initialColors});
+
+  @override
+  State<ColorPickerContent> createState() => _ColorPickerContentState();
+}
+
+class _ColorPickerContentState extends State<ColorPickerContent> {
   Map<String, List<dynamic>> colors = {};
   Color? selectedColor;
   final GlobalKey imageKey = GlobalKey();
+
+  // Showcase Keys
+  final GlobalKey _pickImageKey = GlobalKey();
+  final GlobalKey _imageAreaKey = GlobalKey();
+  final GlobalKey _resultKey = GlobalKey();
+  final GlobalKey _initialButtonKey = GlobalKey();
   File? _image;
   ui.Image? _uiImage;
   bool _showSimilarColors = false;
@@ -32,6 +50,29 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
     super.initState();
     _loadColors();
     _loadFavorites();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkTutorial();
+    });
+  }
+
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool hasShownTutorial =
+        prefs.getBool('hasShownColorPickerTutorial') ?? false;
+
+    if (!hasShownTutorial && mounted) {
+      if (_image == null) {
+        ShowCaseWidget.of(context).startShowCase([_initialButtonKey]);
+      } else {
+        ShowCaseWidget.of(context).startShowCase([
+          _pickImageKey,
+          _imageAreaKey,
+          _resultKey,
+        ]);
+        await prefs.setBool('hasShownColorPickerTutorial', true);
+      }
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -89,6 +130,21 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
         selectedColor = Colors.transparent;
         _showSimilarColors = false;
       });
+
+      // Check if we need to show the second part of the tutorial
+      final prefs = await SharedPreferences.getInstance();
+      bool hasShownTutorial =
+          prefs.getBool('hasShownColorPickerTutorial') ?? false;
+      if (!hasShownTutorial && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ShowCaseWidget.of(context).startShowCase([
+            _pickImageKey,
+            _imageAreaKey,
+            _resultKey,
+          ]);
+          prefs.setBool('hasShownColorPickerTutorial', true);
+        });
+      }
     }
   }
 
@@ -415,52 +471,55 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    height: 50,
-                    width: 50,
-                    decoration: BoxDecoration(
-                      color: selectedColor != null
-                          ? selectedColor
-                          : Colors.grey[300],
-                      border: Border.all(color: Colors.black),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Flexible(
-                    child: Text(
-                      selectedColor != null
-                          ? 'HEX: #${selectedColor!.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}'
-                          : 'Tap on image to pick color',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
+          child: Showcase(
+            key: _resultKey,
+            description:
+                'View the selected color code and similar colors found in the database',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: selectedColor ?? Colors.grey[300],
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Similar Colors',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: Text(
+                        selectedColor != null
+                            ? 'HEX: #${selectedColor!.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}'
+                            : 'Tap on image to pick color',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              selectedColor != null
-                  ? _buildSimilarColorsList(similarColors)
-                  : Container(),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  'Similar Colors',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                selectedColor != null
+                    ? _buildSimilarColorsList(similarColors)
+                    : Container(),
+              ],
+            ),
           ),
         ),
       ),
@@ -489,10 +548,14 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
             const SizedBox(height: 20),
             if (_image == null)
               Center(
-                child: ElevatedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.image),
-                  label: const Text('Select Image from Gallery'),
+                child: Showcase(
+                  key: _initialButtonKey,
+                  description: 'Start by selecting an image from your gallery',
+                  child: ElevatedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image),
+                    label: const Text('Select Image from Gallery'),
+                  ),
                 ),
               )
             else
@@ -502,19 +565,23 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                     child: GestureDetector(
                       onTapDown: _handleTapDown,
                       onPanUpdate: _handlePanUpdate,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxHeight: imageHeight,
-                          maxWidth: screenSize.width * 0.8,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Image.file(
-                          _image!,
-                          key: imageKey,
-                          fit: BoxFit.contain,
+                      child: Showcase(
+                        key: _imageAreaKey,
+                        description: 'Tap or drag on the image to pick a color',
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxHeight: imageHeight,
+                            maxWidth: screenSize.width * 0.8,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Image.file(
+                            _image!,
+                            key: imageKey,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
@@ -527,9 +594,14 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
       ),
       floatingActionButton: _image == null
           ? null
-          : FloatingActionButton(
-              onPressed: _pickImage,
-              child: const Icon(Icons.image),
+          : Showcase(
+              key: _pickImageKey,
+              description:
+                  'Select an image from your gallery to pick colors from',
+              child: FloatingActionButton(
+                onPressed: _pickImage,
+                child: const Icon(Icons.image),
+              ),
             ),
     );
   }

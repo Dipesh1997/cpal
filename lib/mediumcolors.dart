@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class MediumColors {
   static final List<Map<String, dynamic>> colors = [
     {

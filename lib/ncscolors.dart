@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class NcsColors {
   static final List<Map<String, dynamic>> colors = [
     {'number': '0300-N', 'value': '#FFFFFC', 'page': 1, 'position': 1},

@@ -10,8 +10,8 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
     namespace = "com.color.paletteasian"
-    compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -57,6 +57,13 @@ android {
         // If your app supports only English, keep just 'en' resources to shrink size.
         // resConfigs "en"
     }
+
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.activity:activity-ktx:1.9.3'
+            force 'androidx.activity:activity:1.9.3'
+        }
+    }
 }
 
 flutter {
@@ -74,4 +81,5 @@ dependencies {
     // implementation "androidx.annotation:annotation:1.5.0"
     // implementation "io.flutter:flutter_embedding_debug:1.0.0-3316dd8728"
     // implementation "io.flutter.plugins.sharedpreferences:shared_preferences_android:1.0.0"
+    implementation "androidx.activity:activity-ktx:1.9.3"
 }

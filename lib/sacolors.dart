@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class SaColors {
   static final List<Map<String, dynamic>> colors = [
     {

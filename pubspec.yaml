@@ -1,7 +1,7 @@
 name: paletteasian
 description: Asian Paints Color Palette
 publish_to: 'none'
-version: 1.0.40+40
+version: 1.0.41+41
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -17,9 +17,12 @@ dependencies:
   provider: ^6.1.2
   share_plus: ^12.0.1
   path_provider: ^2.1.5
-  google_mobile_ads: ^5.2.0
+  google_mobile_ads: ^6.0.0
   showcaseview: ^3.0.0
+  package_info_plus: ^8.0.0
 
+  vector_math: any
+  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

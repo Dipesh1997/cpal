@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'color_detail_page.dart';
 import 'favorites_page.dart';
@@ -19,6 +19,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // Main entry point for the Color Palette application
 void main() async {
@@ -1250,7 +1251,6 @@ class _OpusTabViewState extends State<OpusTabView>
   }
 }
 
-// Add AboutPage after ColorPalettePage
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
 
@@ -1263,6 +1263,7 @@ class _AboutPageState extends State<AboutPage> {
   bool _isBannerAdReady = false;
   RewardedAd? _rewardedAd;
   bool _isRewardedAdReady = false;
+  String _version = '';
 
   @override
   void initState() {
@@ -1272,12 +1273,19 @@ class _AboutPageState extends State<AboutPage> {
       _loadBannerAd();
       _loadRewardedAd();
     }
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _version = '${packageInfo.version}+${packageInfo.buildNumber}';
+      });
+    }
   }
 
   void _loadBannerAd() {
-    // Using test ad unit ID for development
-    // Replace with your actual banner ad unit ID for production
-    // Test ID: ca-app-pub-3940256099942544/6300978111
     // Format: ca-app-pub-PUBLISHER_ID/AD_UNIT_ID
     _bannerAd = BannerAd(
       adUnitId:
@@ -1440,15 +1448,37 @@ class _AboutPageState extends State<AboutPage> {
                   '• Manage Walls: Use the list view to rename, delete, or edit specific walls.\n'
                   '• Share: Export and share your creation with others.',
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Version 1.0.40+40',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+            _buildFeatureCard(
+              'Color Picker',
+              'Pick colors from any image:\n'
+                  '• Select Image: Choose an image from your gallery.\n'
+                  '• Pick Color: Tap or drag on the image to select a color.\n'
+                  '• View Details: See the color code and find similar colors in the database.',
             ),
-            const SizedBox(height: 24),
+            _buildFeatureCard(
+              'Favorites',
+              'Manage your favorite colors:\n'
+                  '• Save: Tap the star icon on any color to save it.\n'
+                  '• View: Access your favorites from the main menu.\n'
+                  '• Categories: Switch between "All Favorites" and "Wood Colors".',
+            ),
+            _buildFeatureCard(
+              'Full Screen View',
+              'View colors in full screen:\n'
+                  '• Open: Tap on any color detail to open full screen view.\n'
+                  '• Close: Tap anywhere on the screen or use the close button.',
+            ),
+            const SizedBox(height: 16),
+            if (_version.isNotEmpty) ...[
+              Text(
+                'Version $_version',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             // Ad Button/Container
             Container(
               width: double.infinity,
