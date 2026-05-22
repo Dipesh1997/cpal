@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/rendering.dart';
+import 'dart:convert';
 import '../lightcolors.dart';
 import '../mediumcolors.dart';
 import '../darkcolors.dart';
@@ -98,6 +99,8 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
 
   // Add this property to store current color data
   Map<String, dynamic>? _currentColorData;
+
+  bool _isLoading = false;
 
   /// Initializes the state and loads colors and favorites
   @override
@@ -898,6 +901,236 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
     }
   }
 
+  // Project saving and loading helpers
+  Map<String, dynamic> _serializeOffset(Offset offset) =>
+      {'dx': offset.dx, 'dy': offset.dy};
+  Offset _deserializeOffset(Map<String, dynamic> map) =>
+      Offset(map['dx'], map['dy']);
+
+  Map<String, dynamic> _serializePolygon(Map<String, dynamic> polygon) {
+    return {
+      'points':
+          (polygon['points'] as List<Offset>).map(_serializeOffset).toList(),
+      'color': (polygon['color'] as Color).value,
+      'colorNumber': polygon['colorNumber'],
+      'colorName': polygon['colorName'],
+      'category': polygon['category'],
+      'page': polygon['page'],
+      'name': polygon['name'],
+    };
+  }
+
+  Map<String, dynamic> _deserializePolygon(Map<String, dynamic> map) {
+    return {
+      'points': (map['points'] as List)
+          .map((p) => _deserializeOffset(p as Map<String, dynamic>))
+          .toList(),
+      'color': Color(map['color'] as int),
+      'colorNumber': map['colorNumber'],
+      'colorName': map['colorName'],
+      'category': map['category'],
+      'page': map['page'],
+      'name': map['name'],
+    };
+  }
+
+  Map<String, dynamic> _serializeHole(Map<String, dynamic> hole) {
+    return {
+      'points': (hole['points'] as List<Offset>).map(_serializeOffset).toList(),
+      'color': (hole['color'] as Color).value,
+    };
+  }
+
+  Map<String, dynamic> _deserializeHole(Map<String, dynamic> map) {
+    return {
+      'points': (map['points'] as List)
+          .map((p) => _deserializeOffset(p as Map<String, dynamic>))
+          .toList(),
+      'color': Color(map['color'] as int),
+    };
+  }
+
+  Future<void> _saveProject() async {
+    if (_polygons.isEmpty && backgroundImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing to save!')),
+      );
+      return;
+    }
+
+    final projectNameController = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save Project'),
+        content: TextField(
+          controller: projectNameController,
+          decoration: const InputDecoration(hintText: 'Enter project name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, projectNameController.text),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+
+    if (name == null || name.isEmpty) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final projectsJson = prefs.getStringList('saved_projects') ?? [];
+
+      String? imagePath;
+      if (backgroundImage != null) {
+        final byteData =
+            await backgroundImage!.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData != null) {
+          final buffer = byteData.buffer.asUint8List();
+          final directory = await getApplicationDocumentsDirectory();
+          imagePath =
+              '${directory.path}/project_${name}_${DateTime.now().millisecondsSinceEpoch}.png';
+          final file = File(imagePath);
+          await file.writeAsBytes(buffer);
+        }
+      }
+
+      final projectData = {
+        'name': name,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'imagePath': imagePath,
+        'polygons': _polygons.map(_serializePolygon).toList(),
+        'holes': _holes.map(_serializeHole).toList(),
+      };
+
+      projectsJson.add(jsonEncode(projectData));
+      await prefs.setStringList('saved_projects', projectsJson);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Project "$name" saved successfully!')),
+        );
+      }
+    } catch (e) {
+      print('Error saving project: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save project')),
+        );
+      }
+    }
+  }
+
+  void _showSavedProjects() async {
+    final prefs = await SharedPreferences.getInstance();
+    final projectsJson = prefs.getStringList('saved_projects') ?? [];
+    final List<Map<String, dynamic>> projects = projectsJson
+        .map((e) => jsonDecode(e) as Map<String, dynamic>)
+        .toList();
+
+    if (projects.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No saved projects found')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Saved Projects'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: projects.length,
+              itemBuilder: (context, index) {
+                final project = projects[index];
+                return ListTile(
+                  title: Text(project['name'] ?? 'Untitled'),
+                  subtitle: Text(DateTime.fromMillisecondsSinceEpoch(
+                          project['timestamp'] ?? 0)
+                      .toString()),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      projectsJson.removeAt(index);
+                      await prefs.setStringList('saved_projects', projectsJson);
+                      Navigator.pop(context);
+                      _showSavedProjects();
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _loadProject(project);
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadProject(Map<String, dynamic> projectData) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Deserialize polygons and holes
+      final List<dynamic> loadedPolygons = projectData['polygons'] ?? [];
+      final List<dynamic> loadedHoles = projectData['holes'] ?? [];
+
+      _polygons = loadedPolygons
+          .map((e) => _deserializePolygon(e as Map<String, dynamic>))
+          .toList();
+      _holes = loadedHoles
+          .map((e) => _deserializeHole(e as Map<String, dynamic>))
+          .toList();
+
+      // Load image
+      final String? imagePath = projectData['imagePath'];
+      if (imagePath != null && File(imagePath).existsSync()) {
+        final bytes = await File(imagePath).readAsBytes();
+        final codec = await ui.instantiateImageCodec(bytes);
+        final fi = await codec.getNextFrame();
+        setState(() {
+          backgroundImage = fi.image;
+          renderedImage = fi.image;
+        });
+      }
+
+      _saveState(); // Save to undo stack
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Project "${projectData['name']}" loaded')),
+        );
+      }
+    } catch (e) {
+      print('Error loading project: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load project')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   /// Undoes the last action
   void _undo() {
     if (_undoStack.isNotEmpty) {
@@ -946,6 +1179,16 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
             onPressed: _redoStack.isEmpty ? null : _redo,
             tooltip: 'Redo',
           ),
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _saveProject,
+            tooltip: 'Save Project',
+          ),
+          IconButton(
+            icon: const Icon(Icons.folder_open),
+            onPressed: _showSavedProjects,
+            tooltip: 'Open Project',
+          ),
           Showcase(
             key: _wallsKey,
             description:
@@ -974,106 +1217,116 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: width,
-              maxHeight: height,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Container(
-                    width: width,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
+        child: Stack(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: width,
+                  maxHeight: height,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Container(
+                        width: width,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.3),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Showcase(
-                      key: _canvasShowcaseKey,
-                      description:
-                          'Tap here to create points for your polygon. Tap on a completed polygon to change its color.',
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: RepaintBoundary(
-                          key: _canvasKey,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (!_isDrawingPolygon && !_isDrawingHole) {
-                                final tapPosition = _lastTapPosition;
-                                if (tapPosition != null) {
-                                  for (int i = 0; i < _polygons.length; i++) {
-                                    final polygon = _polygons[i];
-                                    final points =
-                                        polygon['points'] as List<Offset>;
-                                    if (points.isNotEmpty &&
-                                        _isPointInPolygon(
-                                            tapPosition, points)) {
-                                      setState(() {
-                                        _selectedPolygonIndex = i;
-                                      });
-                                      _showColorPicker();
-                                      break;
+                        child: Showcase(
+                          key: _canvasShowcaseKey,
+                          description:
+                              'Tap here to create points for your polygon. Tap on a completed polygon to change its color.',
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: RepaintBoundary(
+                              key: _canvasKey,
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (!_isDrawingPolygon && !_isDrawingHole) {
+                                    final tapPosition = _lastTapPosition;
+                                    if (tapPosition != null) {
+                                      for (int i = 0;
+                                          i < _polygons.length;
+                                          i++) {
+                                        final polygon = _polygons[i];
+                                        final points =
+                                            polygon['points'] as List<Offset>;
+                                        if (points.isNotEmpty &&
+                                            _isPointInPolygon(
+                                                tapPosition, points)) {
+                                          setState(() {
+                                            _selectedPolygonIndex = i;
+                                          });
+                                          _showColorPicker();
+                                          break;
+                                        }
+                                      }
                                     }
                                   }
-                                }
-                              }
-                            },
-                            onTapDown: (details) {
-                              setState(() {
-                                _lastTapPosition = details.localPosition;
-                                if (_isDrawingPolygon || _isDrawingHole) {
-                                  if (_isDrawingHole) {
-                                    _holePoints.add(details.localPosition);
-                                    // Force rebuild of hole points
-                                    _holePoints =
-                                        List<Offset>.from(_holePoints);
-                                  } else {
-                                    _points.add(details.localPosition);
-                                    // Force rebuild of polygon points
-                                    _points = List<Offset>.from(_points);
-                                  }
-                                }
-                              });
-                            },
-                            onTapUp: (details) {
-                              // Remove automatic finishing of polygon
-                            },
-                            onTapCancel: () {
-                              // Remove automatic finishing of polygon
-                            },
-                            child: CustomPaint(
-                              painter: _DrawingPainter(
-                                backgroundImage: renderedImage,
-                                polygons: _polygons,
-                                holes: _holes,
-                                isDrawingPolygon: _isDrawingPolygon,
-                                isDrawingHole: _isDrawingHole,
-                                currentPolygonColor: _currentPolygonColor,
-                                points: _points,
-                                holePoints: _holePoints,
+                                },
+                                onTapDown: (details) {
+                                  setState(() {
+                                    _lastTapPosition = details.localPosition;
+                                    if (_isDrawingPolygon || _isDrawingHole) {
+                                      if (_isDrawingHole) {
+                                        _holePoints.add(details.localPosition);
+                                        // Force rebuild of hole points
+                                        _holePoints =
+                                            List<Offset>.from(_holePoints);
+                                      } else {
+                                        _points.add(details.localPosition);
+                                        // Force rebuild of polygon points
+                                        _points = List<Offset>.from(_points);
+                                      }
+                                    }
+                                  });
+                                },
+                                onTapUp: (details) {
+                                  // Remove automatic finishing of polygon
+                                },
+                                onTapCancel: () {
+                                  // Remove automatic finishing of polygon
+                                },
+                                child: CustomPaint(
+                                  painter: _DrawingPainter(
+                                    backgroundImage: renderedImage,
+                                    polygons: _polygons,
+                                    holes: _holes,
+                                    isDrawingPolygon: _isDrawingPolygon,
+                                    isDrawingHole: _isDrawingHole,
+                                    currentPolygonColor: _currentPolygonColor,
+                                    points: _points,
+                                    holePoints: _holePoints,
+                                  ),
+                                  size: Size(width, height),
+                                ),
                               ),
-                              size: Size(width, height),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(),
+              ),
+          ],
         ),
       ),
       floatingActionButton: Column(
