@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'dart:async';
 
 // Main entry point for the Color Palette application
 void main() async {
@@ -552,142 +553,15 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
 
   Widget _buildColorGrid(String category) {
     try {
-      final categoryColors = filteredColors[category] ?? [];
-
-      if (categoryColors.isEmpty) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'No colors found in this category',
-              style: TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-      }
-
-      Map<int, List<dynamic>> colorsByPage = {};
-      for (var color in categoryColors) {
-        try {
-          int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
-          if (!colorsByPage.containsKey(page)) {
-            colorsByPage[page] = [];
-          }
-          colorsByPage[page]!.add(color);
-        } catch (e) {
-          if (!colorsByPage.containsKey(206)) {
-            colorsByPage[206] = [];
-          }
-          colorsByPage[206]!.add(color);
-        }
-      }
-
-      List<int> sortedPages = colorsByPage.keys.toList()..sort();
-
-      return CustomScrollView(
-        key: PageStorageKey<String>(category),
-        slivers: [
-          const SliverPadding(padding: EdgeInsets.only(top: 8)),
-          for (var pageIndex = 0;
-              pageIndex < sortedPages.length;
-              pageIndex++) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Text(
-                  'Page ${sortedPages[pageIndex]}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.5,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    try {
-                      final pageColors = colorsByPage[sortedPages[pageIndex]]!;
-                      if (index >= pageColors.length) {
-                        return const SizedBox.shrink();
-                      }
-
-                      var color = pageColors[index];
-                      return Card(
-                        elevation: 4,
-                        child: InkWell(
-                          onTap: () {
-                            try {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ColorDetailPage(
-                                    color: {
-                                      ...color,
-                                      'tab': category,
-                                    },
-                                    onFavoriteToggle: toggleFavorite,
-                                    isFavorite: isFavorite(color['number']),
-                                    allColors: colors,
-                                  ),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Error loading color details'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: hexToColor(color['value']),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  color['number'],
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    } catch (e) {
-                      return const SizedBox.shrink();
-                    }
-                  },
-                  childCount: colorsByPage[sortedPages[pageIndex]]?.length ?? 0,
-                ),
-              ),
-            ),
-          ],
-          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-        ],
+      return ColorGridWithWheel(
+        categoryColors: filteredColors[category] ?? [],
+        category: category,
+        onFavoriteToggle: toggleFavorite,
+        isFavorite: isFavorite,
+        allColors: colors,
+        hexToColor: hexToColor,
+        showWheel: category == 'medium' || category == 'dark',
+        isSearchActive: searchQuery.isNotEmpty,
       );
     } catch (e) {
       return const Center(
@@ -1068,7 +942,7 @@ class _OpusTabViewState extends State<OpusTabView>
     }
   }
 
-  Widget _buildColorGrid(List<dynamic> colors) {
+  Widget _buildColorGrid(List<dynamic> colors, String category) {
     try {
       Map<int, List<dynamic>> colorsByPage = {};
       for (var color in colors) {
@@ -1132,11 +1006,13 @@ class _OpusTabViewState extends State<OpusTabView>
               }
             }
 
-            if (!_pageCache.containsKey(pageNumber)) {
-              _pageCache[pageNumber] =
-                  _buildPageContent(pageNumber, colorsToShow);
+            // Using category in the key to prevent conflicts between different categories
+            final cacheKey = '$category-$pageNumber'.hashCode;
+            if (!_pageCache.containsKey(cacheKey)) {
+              _pageCache[cacheKey] =
+                  _buildPageContent(pageNumber, colorsToShow, category);
             }
-            return _pageCache[pageNumber]!;
+            return _pageCache[cacheKey]!;
           },
         ),
       );
@@ -1154,8 +1030,10 @@ class _OpusTabViewState extends State<OpusTabView>
     }
   }
 
-  Widget _buildPageContent(int pageNumber, List<dynamic> colors) {
+  Widget _buildPageContent(int pageNumber, List<dynamic> colors, String category) {
     try {
+      final bool isWW = category.toUpperCase() == 'WW' ||
+          colors.any((c) => c['number'].toString().toUpperCase().startsWith('WW'));
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1172,41 +1050,69 @@ class _OpusTabViewState extends State<OpusTabView>
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              childAspectRatio: 0.7,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isWW ? 2 : 4,
+              childAspectRatio: isWW ? 1.5 : 0.7,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
             ),
             itemCount: colors.length,
             itemBuilder: (context, colorIndex) {
               final color = colors[colorIndex];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ColorDetailPage(
-                        color: {
-                          ...color,
-                          'tab': 'opus',
-                        },
-                        onFavoriteToggle: widget.onFavoriteToggle,
-                        isFavorite: widget.favoriteColorNumbers
-                            .contains(color['number']),
-                        allColors: widget.allColors,
+              final bool isColorWW =
+                  color['number'].toString().toUpperCase().startsWith('WW');
+              return Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ColorDetailPage(
+                          color: {
+                            ...color,
+                            'tab': 'opus',
+                          },
+                          onFavoriteToggle: widget.onFavoriteToggle,
+                          isFavorite: widget.favoriteColorNumbers
+                              .contains(color['number']),
+                          allColors: widget.allColors,
+                        ),
                       ),
-                    ),
-                  );
-                },
-                child: Card(
-                  color: widget.hexToColor(color['value']),
-                  child: Center(
-                    child: Text(
-                      color['name'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                      ),
-                      textAlign: TextAlign.center,
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: widget.hexToColor(color['value']),
+                              borderRadius: BorderRadius.circular(4),
+                              border: isColorWW
+                                  ? Border.all(color: Colors.black, width: 1)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isColorWW ? color['number'] : color['name'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isColorWW ? 12 : 10,
+                            color: isColorWW ? Colors.black : null,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1242,7 +1148,7 @@ class _OpusTabViewState extends State<OpusTabView>
           child: TabBarView(
             controller: _subTabController,
             children: _categories.map((category) {
-              return _buildColorGrid(_categorizedColors[category] ?? []);
+              return _buildColorGrid(_categorizedColors[category] ?? [], category);
             }).toList(),
           ),
         ),
@@ -1573,4 +1479,506 @@ class _AboutPageState extends State<AboutPage> {
       ),
     );
   }
+}
+
+class ColorGridWithWheel extends StatefulWidget {
+  final List<dynamic> categoryColors;
+  final String category;
+  final Function(String) onFavoriteToggle;
+  final bool Function(String) isFavorite;
+  final Map<String, List<dynamic>> allColors;
+  final Color Function(String) hexToColor;
+  final bool showWheel;
+  final bool isSearchActive;
+
+  const ColorGridWithWheel({
+    super.key,
+    required this.categoryColors,
+    required this.category,
+    required this.onFavoriteToggle,
+    required this.isFavorite,
+    required this.allColors,
+    required this.hexToColor,
+    this.showWheel = false,
+    this.isSearchActive = false,
+  });
+
+  @override
+  State<ColorGridWithWheel> createState() => _ColorGridWithWheelState();
+}
+
+class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
+  late ScrollController _scrollController;
+  bool _isVisible = false;
+  bool _isBottomBarVisible = false;
+  bool _isSliderHiddenByUser = false;
+  Timer? _hideTimer;
+  final Map<int, GlobalKey> _pageKeys = {};
+  late List<int> _sortedPages;
+  late Map<int, List<dynamic>> _colorsByPage;
+  Map<int, dynamic> _lastColorOfAllPages = {};
+  late List<int> _wheelPages;
+  int? _hoveredIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    _prepareData();
+  }
+
+  @override
+  void didUpdateWidget(ColorGridWithWheel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.categoryColors != widget.categoryColors ||
+        oldWidget.allColors != widget.allColors) {
+      _prepareData();
+    }
+  }
+
+  void _prepareData() {
+    _colorsByPage = {};
+    for (var color in widget.categoryColors) {
+      try {
+        int page = int.tryParse(color['page']?.toString() ?? '206') ?? 206;
+        if (!_colorsByPage.containsKey(page)) {
+          _colorsByPage[page] = [];
+        }
+        _colorsByPage[page]!.add(color);
+      } catch (e) {
+        if (!_colorsByPage.containsKey(206)) {
+          _colorsByPage[206] = [];
+        }
+        _colorsByPage[206]!.add(color);
+      }
+    }
+    _sortedPages = _colorsByPage.keys.toList()..sort();
+    _pageKeys.clear();
+    for (var page in _sortedPages) {
+      _pageKeys[page] = GlobalKey();
+    }
+
+    _lastColorOfAllPages = {};
+    final allCategoryColors = widget.allColors[widget.category] ?? [];
+    for (var color in allCategoryColors) {
+      if (color == null) continue;
+      final pageVal = color['page'];
+      if (pageVal == null) continue;
+      
+      int page = int.tryParse(pageVal.toString()) ?? 0;
+      if (page != 0) {
+        _lastColorOfAllPages[page] = color;
+      }
+    }
+
+    if (widget.category == 'medium') {
+      List<int> allMediumPages = _lastColorOfAllPages.keys
+          .where((p) => p >= 26 && p <= 255)
+          .toList()
+        ..sort();
+
+      _wheelPages = [];
+      for (int i = 0; i < allMediumPages.length; i += 11) {
+        _wheelPages.add(allMediumPages[i]);
+      }
+      // Ensure the last page is included if it was skipped
+      if (allMediumPages.isNotEmpty &&
+          !_wheelPages.contains(allMediumPages.last)) {
+        _wheelPages.add(allMediumPages.last);
+      }
+    } else if (widget.category == 'dark') {
+      _wheelPages = _lastColorOfAllPages.keys.toList()..sort();
+    } else {
+      _wheelPages = _sortedPages;
+    }
+  }
+
+  void _onScroll() {
+    if (widget.showWheel) {
+      bool changed = false;
+      if (!_isVisible && !_isSliderHiddenByUser) {
+        _isVisible = true;
+        changed = true;
+      }
+      if (!_isBottomBarVisible) {
+        _isBottomBarVisible = true;
+        changed = true;
+      }
+      if (changed) {
+        setState(() {});
+      }
+      _resetTimer();
+    }
+  }
+
+  void _resetTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isVisible = false;
+          _isBottomBarVisible = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scrollToPage(int page, {bool isLive = false}) {
+    final key = _pageKeys[page];
+    if (key != null && key.currentContext != null) {
+      Scrollable.ensureVisible(
+        key.currentContext!,
+        duration: Duration(milliseconds: isLive ? 100 : 300),
+        curve: isLive ? Curves.linear : Curves.easeOutCubic,
+      );
+    }
+    _resetTimer();
+  }
+
+  void _handleFanInteraction(Offset localPosition, Size widgetSize) {
+    // Pivot matches the painter
+    final pivot = Offset(widgetSize.width + 20, widgetSize.height / 2);
+    final dx = localPosition.dx - pivot.dx;
+    final dy = localPosition.dy - pivot.dy;
+
+    double angle = math.atan2(dy, dx);
+    double degrees = angle * 180 / math.pi;
+
+    // Normalize degrees to 0-360
+    if (degrees < 0) degrees += 360;
+
+    // Left side of pivot is roughly 100 to 260 degrees
+    if (degrees < 100 || degrees > 260) {
+      if (_hoveredIndex != null) {
+        setState(() {
+          _hoveredIndex = null;
+        });
+      }
+      return;
+    }
+
+    // Map 100-260 to 0.0-1.0 (top to bottom)
+    double t = (degrees - 100) / 160;
+    t = t.clamp(0.0, 1.0);
+
+    int index = (t * (_wheelPages.length - 1)).round();
+    if (index >= 0 && index < _wheelPages.length) {
+      if (_hoveredIndex != index) {
+        setState(() {
+          _hoveredIndex = index;
+        });
+        _scrollToPage(_wheelPages[index], isLive: true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.categoryColors.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'No colors found in this category',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final size = constraints.biggest;
+      return Stack(
+        children: [
+          CustomScrollView(
+            controller: _scrollController,
+            key: PageStorageKey<String>(widget.category),
+            slivers: [
+              const SliverPadding(padding: EdgeInsets.only(top: 8)),
+              for (var page in _sortedPages) ...[
+                SliverToBoxAdapter(
+                  key: _pageKeys[page],
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Text(
+                      'Page $page',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        try {
+                          final pageColors = _colorsByPage[page]!;
+                          if (index >= pageColors.length) {
+                            return const SizedBox.shrink();
+                          }
+
+                          var color = pageColors[index];
+                          return Card(
+                            elevation: 4,
+                            child: InkWell(
+                              onTap: () {
+                                try {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ColorDetailPage(
+                                        color: {
+                                          ...color,
+                                          'tab': widget.category,
+                                        },
+                                        onFavoriteToggle:
+                                            widget.onFavoriteToggle,
+                                        isFavorite:
+                                            widget.isFavorite(color['number']),
+                                        allColors: widget.allColors,
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Error loading color details'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color:
+                                              widget.hexToColor(color['value']),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      color['number'],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          return const SizedBox.shrink();
+                        }
+                      },
+                      childCount: _colorsByPage[page]?.length ?? 0,
+                    ),
+                  ),
+                ),
+              ],
+              const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+            ],
+          ),
+          if (_isVisible &&
+              widget.showWheel &&
+              _wheelPages.isNotEmpty &&
+              !widget.isSearchActive &&
+              !_isSliderHiddenByUser)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 180,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanUpdate: (details) => _handleFanInteraction(
+                    details.localPosition, Size(180, size.height)),
+                onTapDown: (details) => _handleFanInteraction(
+                    details.localPosition, Size(180, size.height)),
+                onPanEnd: (_) => setState(() => _hoveredIndex = null),
+                onTapUp: (_) => setState(() => _hoveredIndex = null),
+                onTapCancel: () => setState(() => _hoveredIndex = null),
+                child: CustomPaint(
+                  size: Size(180, size.height),
+                  painter: FandeckPainter(
+                    pages: _wheelPages,
+                    lastColors: _lastColorOfAllPages,
+                    hexToColor: widget.hexToColor,
+                    hoveredIndex: _hoveredIndex,
+                  ),
+                ),
+              ),
+            ),
+          if (_isBottomBarVisible && widget.showWheel && !widget.isSearchActive)
+            Positioned(
+              left: 50,
+              right: 50,
+              bottom: 30,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Hide side bar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Checkbox(
+                        value: _isSliderHiddenByUser,
+                        onChanged: (val) {
+                          setState(() {
+                            _isSliderHiddenByUser = val ?? false;
+                            if (_isSliderHiddenByUser) {
+                              _isVisible = false;
+                            } else {
+                              _isVisible = true;
+                            }
+                          });
+                          _resetTimer();
+                        },
+                        checkColor: Colors.black,
+                        activeColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+}
+
+class FandeckPainter extends CustomPainter {
+  final List<int> pages;
+  final Map<int, dynamic> lastColors;
+  final Color Function(String) hexToColor;
+  final int? hoveredIndex;
+
+  FandeckPainter({
+    required this.pages,
+    required this.lastColors,
+    required this.hexToColor,
+    this.hoveredIndex,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Pivot point is to the right of the widget to create a fan effect
+    final pivot = Offset(size.width + 20, size.height / 2);
+    final outerRadius = size.width + 10;
+    final innerRadius = 60.0;
+
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (int i = 0; i < pages.length; i++) {
+      final page = pages[i];
+      final colorData = lastColors[page];
+      if (colorData == null) continue;
+
+      paint.color = hexToColor(colorData['value']);
+
+      // Calculate angles (100 to 260 degrees to point left from the right-side pivot)
+      double startDeg = 100 + (i / pages.length) * 160;
+      double endDeg = 100 + ((i + 1) / pages.length) * 160;
+
+      double startRad = startDeg * math.pi / 180;
+      double sweepRad = (endDeg - startDeg) * math.pi / 180;
+
+      Path path = Path();
+      path.addArc(
+        Rect.fromCircle(center: pivot, radius: outerRadius),
+        startRad,
+        sweepRad,
+      );
+      path.lineTo(
+        pivot.dx + innerRadius * math.cos(startRad + sweepRad),
+        pivot.dy + innerRadius * math.sin(startRad + sweepRad),
+      );
+      path.arcTo(
+        Rect.fromCircle(center: pivot, radius: innerRadius),
+        startRad + sweepRad,
+        -sweepRad,
+        false,
+      );
+      path.close();
+
+      canvas.drawPath(path, paint);
+
+      // Add highlight if this is the hovered color
+      if (hoveredIndex == i) {
+        final highlightPaint = Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0;
+        canvas.drawPath(path, highlightPaint);
+      } else if (pages.length < 100) {
+        // Add a subtle border to distinguish between very similar colors
+        final linePaint = Paint()
+          ..color = Colors.white.withOpacity(0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.5;
+        canvas.drawPath(path, linePaint);
+      }
+    }
+    
+    // Draw a center "pin" for the fandeck look
+    final pinPaint = Paint()..color = Colors.black.withOpacity(0.5);
+    canvas.drawCircle(pivot, 40, pinPaint);
+    canvas.drawCircle(pivot, 40, Paint()..color = Colors.white.withOpacity(0.2)..style = PaintingStyle.stroke..strokeWidth = 2);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
