@@ -18,7 +18,6 @@ import 'dart:math' as math;
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:async';
 
@@ -29,8 +28,6 @@ void main() async {
   // Enable edge-to-edge display
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
@@ -222,6 +219,10 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     Card(
                       elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: Colors.red, width: 0.8),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Column(
@@ -290,9 +291,7 @@ class ColorPalettePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShowCaseWidget(
-      builder: (context) => const ColorPaletteContent(),
-    );
+    return const ColorPaletteContent();
   }
 }
 
@@ -329,10 +328,6 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
   // Preloaded colors for ColorTablePage
   static Map<String, List<dynamic>>? _preloadedTableColors;
 
-  // Showcase keys
-  final GlobalKey _searchKey = GlobalKey();
-  final GlobalKey _tabKey = GlobalKey();
-
   @override
   void initState() {
     super.initState();
@@ -341,20 +336,6 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
     _mainTabController.addListener(_handleMainTabChange);
     _loadFavorites();
     _preloadTableColors();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAndShowShowcase();
-    });
-  }
-
-  Future<void> _checkAndShowShowcase() async {
-    final prefs = await SharedPreferences.getInstance();
-    bool hasShownTutorial = prefs.getBool('hasShownTutorial') ?? false;
-
-    if (!hasShownTutorial && mounted) {
-      ShowCaseWidget.of(context).startShowCase([_searchKey, _tabKey]);
-      await prefs.setBool('hasShownTutorial', true);
-    }
   }
 
   @override
@@ -605,16 +586,11 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
         length: visibleTabs.length,
         child: Column(
           children: [
-            Showcase(
-              key: _tabKey,
-              description:
-                  'Switch between different color categories (Light, Medium, Dark, etc.)',
-              child: TabBar(
-                isScrollable: true,
-                tabs: visibleTabs
-                    .map((tab) => Tab(text: tab.toUpperCase()))
-                    .toList(),
-              ),
+            TabBar(
+              isScrollable: true,
+              tabs: visibleTabs
+                  .map((tab) => Tab(text: tab.toUpperCase()))
+                  .toList(),
             ),
             Expanded(
               child: TabBarView(
@@ -752,19 +728,15 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
             child: Row(
               children: [
                 Expanded(
-                  child: Showcase(
-                    key: _searchKey,
-                    description: 'Search colors by name, number, or value',
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search colors by name, number, or value...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        filterColors(value);
-                      },
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search colors by name, number, or value...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
                     ),
+                    onChanged: (value) {
+                      filterColors(value);
+                    },
                   ),
                 ),
               ],
@@ -1065,6 +1037,7 @@ class _OpusTabViewState extends State<OpusTabView>
                 elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: Colors.red, width: 0.8),
                 ),
                 child: InkWell(
                   onTap: () {
@@ -1200,13 +1173,13 @@ class _AboutPageState extends State<AboutPage> {
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (_) {
-          print('Banner ad loaded successfully');
+          debugPrint('Banner ad loaded successfully');
           setState(() {
             _isBannerAdReady = true;
           });
         },
         onAdFailedToLoad: (ad, error) {
-          print('Failed to load banner ad: $error');
+          debugPrint('Failed to load banner ad: $error');
           ad.dispose();
           setState(() {
             _isBannerAdReady = false;
@@ -1228,14 +1201,14 @@ class _AboutPageState extends State<AboutPage> {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          print('Rewarded ad loaded successfully');
+          debugPrint('Rewarded ad loaded successfully');
           setState(() {
             _rewardedAd = ad;
             _isRewardedAdReady = true;
           });
         },
         onAdFailedToLoad: (error) {
-          print('Failed to load rewarded ad: $error');
+          debugPrint('Failed to load rewarded ad: $error');
           setState(() {
             _isRewardedAdReady = false;
           });
@@ -1252,7 +1225,7 @@ class _AboutPageState extends State<AboutPage> {
           _loadRewardedAd(); // Reload for next time
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
-          print('Failed to show rewarded ad: $error');
+          debugPrint('Failed to show rewarded ad: $error');
           ad.dispose();
           _loadRewardedAd(); // Reload for next time
         },
@@ -1261,13 +1234,15 @@ class _AboutPageState extends State<AboutPage> {
       _rewardedAd!.show(
         onUserEarnedReward: (ad, reward) {
           // Handle reward
-          print('User earned reward: ${reward.amount} ${reward.type}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Reward earned: ${reward.amount} ${reward.type}'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          debugPrint('User earned reward: ${reward.amount} ${reward.type}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Reward earned: ${reward.amount} ${reward.type}'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         },
       );
     } else {
@@ -1509,10 +1484,6 @@ class ColorGridWithWheel extends StatefulWidget {
 
 class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
   late ScrollController _scrollController;
-  bool _isVisible = false;
-  bool _isBottomBarVisible = false;
-  bool _isSliderHiddenByUser = false;
-  Timer? _hideTimer;
   final Map<int, GlobalKey> _pageKeys = {};
   late List<int> _sortedPages;
   late Map<int, List<dynamic>> _colorsByPage;
@@ -1524,7 +1495,6 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _scrollController.addListener(_onScroll);
     _prepareData();
   }
 
@@ -1582,7 +1552,6 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
       for (int i = 0; i < allMediumPages.length; i += 11) {
         _wheelPages.add(allMediumPages[i]);
       }
-      // Ensure the last page is included if it was skipped
       if (allMediumPages.isNotEmpty &&
           !_wheelPages.contains(allMediumPages.last)) {
         _wheelPages.add(allMediumPages.last);
@@ -1594,46 +1563,22 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
     }
   }
 
-  void _onScroll() {
-    if (widget.showWheel) {
-      bool changed = false;
-      if (!_isVisible && !_isSliderHiddenByUser) {
-        _isVisible = true;
-        changed = true;
-      }
-      if (!_isBottomBarVisible) {
-        _isBottomBarVisible = true;
-        changed = true;
-      }
-      if (changed) {
-        setState(() {});
-      }
-      _resetTimer();
-    }
-  }
-
-  void _resetTimer() {
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isVisible = false;
-          _isBottomBarVisible = false;
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _hideTimer?.cancel();
     super.dispose();
   }
 
   void _scrollToPage(int page, {bool isLive = false}) {
-    final key = _pageKeys[page];
+    int targetPage = page;
+    if (!_pageKeys.containsKey(targetPage)) {
+      if (_sortedPages.isEmpty) return;
+      targetPage = _sortedPages.firstWhere(
+        (p) => p >= page,
+        orElse: () => _sortedPages.last,
+      );
+    }
+    final key = _pageKeys[targetPage];
     if (key != null && key.currentContext != null) {
       Scrollable.ensureVisible(
         key.currentContext!,
@@ -1641,43 +1586,20 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
         curve: isLive ? Curves.linear : Curves.easeOutCubic,
       );
     }
-    _resetTimer();
   }
 
-  void _handleFanInteraction(Offset localPosition, Size widgetSize) {
-    // Pivot matches the painter
-    final pivot = Offset(widgetSize.width + 20, widgetSize.height / 2);
-    final dx = localPosition.dx - pivot.dx;
-    final dy = localPosition.dy - pivot.dy;
+  void _handleHorizontalBarInteraction(Offset localPosition, double width) {
+    if (_wheelPages.isEmpty || width <= 0) return;
 
-    double angle = math.atan2(dy, dx);
-    double degrees = angle * 180 / math.pi;
+    double dx = localPosition.dx.clamp(0.0, width - 0.1);
+    int index =
+        (dx / width * _wheelPages.length).floor().clamp(0, _wheelPages.length - 1);
 
-    // Normalize degrees to 0-360
-    if (degrees < 0) degrees += 360;
-
-    // Left side of pivot is roughly 100 to 260 degrees
-    if (degrees < 100 || degrees > 260) {
-      if (_hoveredIndex != null) {
-        setState(() {
-          _hoveredIndex = null;
-        });
-      }
-      return;
-    }
-
-    // Map 100-260 to 0.0-1.0 (top to bottom)
-    double t = (degrees - 100) / 160;
-    t = t.clamp(0.0, 1.0);
-
-    int index = (t * (_wheelPages.length - 1)).round();
-    if (index >= 0 && index < _wheelPages.length) {
-      if (_hoveredIndex != index) {
-        setState(() {
-          _hoveredIndex = index;
-        });
-        _scrollToPage(_wheelPages[index], isLive: true);
-      }
+    if (_hoveredIndex != index) {
+      setState(() {
+        _hoveredIndex = index;
+      });
+      _scrollToPage(_wheelPages[index], isLive: true);
     }
   }
 
@@ -1696,11 +1618,83 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
       );
     }
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final size = constraints.biggest;
-      return Stack(
-        children: [
-          CustomScrollView(
+    final bool showFixedHorizontalBar = widget.showWheel &&
+        _wheelPages.isNotEmpty &&
+        !widget.isSearchActive;
+
+    return Column(
+      children: [
+        if (showFixedHorizontalBar)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final barWidth = constraints.maxWidth;
+              final activePage = _hoveredIndex != null &&
+                      _hoveredIndex! < _wheelPages.length
+                  ? _wheelPages[_hoveredIndex!]
+                  : null;
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (details) => _handleHorizontalBarInteraction(
+                        details.localPosition, barWidth),
+                    onPanUpdate: (details) => _handleHorizontalBarInteraction(
+                        details.localPosition, barWidth),
+                    onTapDown: (details) => _handleHorizontalBarInteraction(
+                        details.localPosition, barWidth),
+                    onPanEnd: (_) => setState(() => _hoveredIndex = null),
+                    onTapUp: (_) => setState(() => _hoveredIndex = null),
+                    onTapCancel: () => setState(() => _hoveredIndex = null),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CustomPaint(
+                          size: Size(barWidth, 40),
+                          painter: HorizontalColorBarPainter(
+                            pages: _wheelPages,
+                            lastColors: _lastColorOfAllPages,
+                            hexToColor: widget.hexToColor,
+                            hoveredIndex: _hoveredIndex,
+                          ),
+                        ),
+                        if (activePage != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Page $activePage',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        Expanded(
+          child: CustomScrollView(
             controller: _scrollController,
             key: PageStorageKey<String>(widget.category),
             slivers: [
@@ -1741,6 +1735,10 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
                           var color = pageColors[index];
                           return Card(
                             elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: const BorderSide(color: Colors.red, width: 0.8),
+                            ),
                             child: InkWell(
                               onTap: () {
                                 try {
@@ -1811,102 +1809,19 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
               const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
             ],
           ),
-          if (_isVisible &&
-              widget.showWheel &&
-              _wheelPages.isNotEmpty &&
-              !widget.isSearchActive &&
-              !_isSliderHiddenByUser)
-            Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: 180,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanUpdate: (details) => _handleFanInteraction(
-                    details.localPosition, Size(180, size.height)),
-                onTapDown: (details) => _handleFanInteraction(
-                    details.localPosition, Size(180, size.height)),
-                onPanEnd: (_) => setState(() => _hoveredIndex = null),
-                onTapUp: (_) => setState(() => _hoveredIndex = null),
-                onTapCancel: () => setState(() => _hoveredIndex = null),
-                child: CustomPaint(
-                  size: Size(180, size.height),
-                  painter: FandeckPainter(
-                    pages: _wheelPages,
-                    lastColors: _lastColorOfAllPages,
-                    hexToColor: widget.hexToColor,
-                    hoveredIndex: _hoveredIndex,
-                  ),
-                ),
-              ),
-            ),
-          if (_isBottomBarVisible && widget.showWheel && !widget.isSearchActive)
-            Positioned(
-              left: 50,
-              right: 50,
-              bottom: 30,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Hide side bar',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: Checkbox(
-                        value: _isSliderHiddenByUser,
-                        onChanged: (val) {
-                          setState(() {
-                            _isSliderHiddenByUser = val ?? false;
-                            if (_isSliderHiddenByUser) {
-                              _isVisible = false;
-                            } else {
-                              _isVisible = true;
-                            }
-                          });
-                          _resetTimer();
-                        },
-                        checkColor: Colors.black,
-                        activeColor: Colors.white,
-                        side: const BorderSide(color: Colors.white, width: 1.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      );
-    });
+        ),
+      ],
+    );
   }
 }
 
-class FandeckPainter extends CustomPainter {
+class HorizontalColorBarPainter extends CustomPainter {
   final List<int> pages;
   final Map<int, dynamic> lastColors;
   final Color Function(String) hexToColor;
   final int? hoveredIndex;
 
-  FandeckPainter({
+  HorizontalColorBarPainter({
     required this.pages,
     required this.lastColors,
     required this.hexToColor,
@@ -1915,11 +1830,9 @@ class FandeckPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Pivot point is to the right of the widget to create a fan effect
-    final pivot = Offset(size.width + 20, size.height / 2);
-    final outerRadius = size.width + 10;
-    final innerRadius = 60.0;
+    if (pages.isEmpty) return;
 
+    final double itemWidth = size.width / pages.length;
     final paint = Paint()..style = PaintingStyle.fill;
 
     for (int i = 0; i < pages.length; i++) {
@@ -1928,57 +1841,34 @@ class FandeckPainter extends CustomPainter {
       if (colorData == null) continue;
 
       paint.color = hexToColor(colorData['value']);
+      final rect = Rect.fromLTWH(i * itemWidth, 0, itemWidth, size.height);
+      canvas.drawRect(rect, paint);
 
-      // Calculate angles (100 to 260 degrees to point left from the right-side pivot)
-      double startDeg = 100 + (i / pages.length) * 160;
-      double endDeg = 100 + ((i + 1) / pages.length) * 160;
+      if (pages.length < 100) {
+        final linePaint = Paint()
+          ..color = Colors.white.withValues(alpha: 0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.5;
+        canvas.drawLine(
+          Offset(i * itemWidth, 0),
+          Offset(i * itemWidth, size.height),
+          linePaint,
+        );
+      }
 
-      double startRad = startDeg * math.pi / 180;
-      double sweepRad = (endDeg - startDeg) * math.pi / 180;
-
-      Path path = Path();
-      path.addArc(
-        Rect.fromCircle(center: pivot, radius: outerRadius),
-        startRad,
-        sweepRad,
-      );
-      path.lineTo(
-        pivot.dx + innerRadius * math.cos(startRad + sweepRad),
-        pivot.dy + innerRadius * math.sin(startRad + sweepRad),
-      );
-      path.arcTo(
-        Rect.fromCircle(center: pivot, radius: innerRadius),
-        startRad + sweepRad,
-        -sweepRad,
-        false,
-      );
-      path.close();
-
-      canvas.drawPath(path, paint);
-
-      // Add highlight if this is the hovered color
       if (hoveredIndex == i) {
         final highlightPaint = Paint()
           ..color = Colors.white
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.0;
-        canvas.drawPath(path, highlightPaint);
-      } else if (pages.length < 100) {
-        // Add a subtle border to distinguish between very similar colors
-        final linePaint = Paint()
-          ..color = Colors.white.withOpacity(0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.5;
-        canvas.drawPath(path, linePaint);
+          ..strokeWidth = 2.5;
+        canvas.drawRect(rect.deflate(1.2), highlightPaint);
       }
     }
-    
-    // Draw a center "pin" for the fandeck look
-    final pinPaint = Paint()..color = Colors.black.withOpacity(0.5);
-    canvas.drawCircle(pivot, 40, pinPaint);
-    canvas.drawCircle(pivot, 40, Paint()..color = Colors.white.withOpacity(0.2)..style = PaintingStyle.stroke..strokeWidth = 2);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant HorizontalColorBarPainter oldDelegate) {
+    return oldDelegate.hoveredIndex != hoveredIndex ||
+        oldDelegate.pages != pages;
+  }
 }

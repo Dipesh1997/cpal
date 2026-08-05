@@ -263,6 +263,10 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
 
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Colors.red, width: 0.8),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -407,6 +411,10 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Card(
                 elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: Colors.red, width: 0.8),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: _buildColorInfo(),

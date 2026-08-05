@@ -271,6 +271,10 @@ class _ColorTablePageState extends State<ColorTablePage>
                   var color = pageColors[index];
                   return Card(
                     elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: const BorderSide(color: Colors.red, width: 0.8),
+                    ),
                     child: InkWell(
                       onTap: () {
                         Navigator.push(

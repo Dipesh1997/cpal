@@ -83,7 +83,7 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
         _favoriteColors = favorites.toSet();
       });
     } catch (e) {
-      print('Error loading favorites: $e');
+      debugPrint('Error loading favorites: $e');
     }
   }
 
@@ -105,7 +105,7 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
         _favoriteColors = favorites.toSet();
       });
     } catch (e) {
-      print('Error toggling favorite: $e');
+      debugPrint('Error toggling favorite: $e');
     }
   }
 
@@ -188,7 +188,7 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
 
       return Color.fromARGB(a, r, g, b);
     } catch (e) {
-      print('Error getting pixel color: $e');
+      debugPrint('Error getting pixel color: $e');
       return null;
     }
   }
@@ -230,9 +230,9 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
   double _calculateColorSimilarity(Color color1, String color2Hex) {
     Color color2 = Color(int.parse('0xFF${color2Hex.replaceAll('#', '')}'));
 
-    double rDiff = (color1.red - color2.red).abs().toDouble();
-    double gDiff = (color1.green - color2.green).abs().toDouble();
-    double bDiff = (color1.blue - color2.blue).abs().toDouble();
+    double rDiff = ((color1.r * 255).round() - (color2.r * 255).round()).abs().toDouble();
+    double gDiff = ((color1.g * 255).round() - (color2.g * 255).round()).abs().toDouble();
+    double bDiff = ((color1.b * 255).round() - (color2.b * 255).round()).abs().toDouble();
 
     // Calculate Euclidean distance in RGB space
     return sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
@@ -293,7 +293,7 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
 
           categorizedColors[categoryType]?.add(colorInfo);
         } catch (e) {
-          print('Error processing color data: $e');
+          debugPrint('Error processing color data: $e');
         }
       }
     });
@@ -336,6 +336,10 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Card(
             elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: const BorderSide(color: Colors.red, width: 0.8),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -469,6 +473,10 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Colors.red, width: 0.8),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Showcase(
@@ -494,7 +502,7 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
                     Flexible(
                       child: Text(
                         selectedColor != null
-                            ? 'HEX: #${selectedColor!.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}'
+                            ? 'HEX: #${selectedColor!.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}'
                             : 'Tap on image to pick color',
                         style: TextStyle(
                           fontSize: 18,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'color_detail_page.dart';
 import 'ncscolors.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'woodcolors.dart';
 
@@ -19,12 +18,10 @@ class FavoritesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShowCaseWidget(
-      builder: (context) => FavoritesContent(
-        allColors: allColors,
-        favoriteColorNumbers: favoriteColorNumbers,
-        onFavoriteToggle: onFavoriteToggle,
-      ),
+    return FavoritesContent(
+      allColors: allColors,
+      favoriteColorNumbers: favoriteColorNumbers,
+      onFavoriteToggle: onFavoriteToggle,
     );
   }
 }
@@ -53,9 +50,8 @@ class _FavoritesContentState extends State<FavoritesContent>
   late TabController _tabController;
   late Map<String, List<dynamic>> _allColorsWithWood;
 
-  // Showcase Keys
-  final GlobalKey _tabsKey = GlobalKey();
-  final GlobalKey _gridKey = GlobalKey();
+  // colorNumber -> saved note text
+  Map<String, String> _colorNotes = {};
 
   @override
   void initState() {
@@ -63,44 +59,48 @@ class _FavoritesContentState extends State<FavoritesContent>
     _tabController = TabController(length: 2, vsync: this);
     _initializeColors();
     _updateFavoriteColors();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkTutorial();
-    });
+    _loadNotes();
   }
 
-  Future<void> _checkTutorial() async {
+  Future<void> _loadNotes() async {
     final prefs = await SharedPreferences.getInstance();
-    bool hasShownTutorial = prefs.getBool('hasShownFavoritesTutorial') ?? false;
+    final keys = prefs.getKeys().where((k) => k.startsWith('color_note_'));
+    if (mounted) {
+      setState(() {
+        _colorNotes = {
+          for (var k in keys)
+            k.replaceFirst('color_note_', ''): prefs.getString(k) ?? '',
+        };
+      });
+    }
+  }
 
-    if (!hasShownTutorial && mounted) {
-      // Only start showcase if there are items to show
-      if (_favoriteColors.isNotEmpty || _woodFavoriteColors.isNotEmpty) {
-        ShowCaseWidget.of(context).startShowCase([
-          _tabsKey,
-          _gridKey,
-        ]);
-        await prefs.setBool('hasShownFavoritesTutorial', true);
-      }
+  Future<void> _saveNote(String colorNumber, String note) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (note.trim().isEmpty) {
+      await prefs.remove('color_note_$colorNumber');
+    } else {
+      await prefs.setString('color_note_$colorNumber', note.trim());
+    }
+    if (mounted) {
+      setState(() {
+        if (note.trim().isEmpty) {
+          _colorNotes.remove(colorNumber);
+        } else {
+          _colorNotes[colorNumber] = note.trim();
+        }
+      });
     }
   }
 
   void _initializeColors() {
-    debugPrint('Initializing colors...');
-    // Create a new map that includes both the main colors and wood colors
     _allColorsWithWood = Map<String, List<dynamic>>.from(widget.allColors);
-
-    // Add wood colors data only if they don't exist in the main colors
     if (!_allColorsWithWood.containsKey('asian')) {
       _allColorsWithWood['asian'] = WoodColors.colors;
     }
     if (!_allColorsWithWood.containsKey('ncs')) {
       _allColorsWithWood['ncs'] = NcsColors.colors;
     }
-
-    debugPrint('Total categories: ${_allColorsWithWood.keys.length}');
-    debugPrint('Categories: ${_allColorsWithWood.keys.join(', ')}');
-    debugPrint('Favorite numbers: ${widget.favoriteColorNumbers.join(', ')}');
   }
 
   @override
@@ -114,7 +114,6 @@ class _FavoritesContentState extends State<FavoritesContent>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.favoriteColorNumbers != widget.favoriteColorNumbers ||
         oldWidget.allColors != widget.allColors) {
-      debugPrint('Widget updated - Favorites changed');
       _initializeColors();
       _updateFavoriteColors();
     }
@@ -128,32 +127,21 @@ class _FavoritesContentState extends State<FavoritesContent>
   }
 
   void _updateFavoriteColors() {
-    debugPrint('Updating favorite colors...');
-    // Clear existing favorites
     List<Map<String, dynamic>> favorites = [];
     List<Map<String, dynamic>> woodFavorites = [];
     Set<String> processedNumbers = {};
 
-    // Rebuild favorites list from current state
     _allColorsWithWood.forEach((category, colors) {
-      debugPrint('Processing category: $category with ${colors.length} colors');
       for (var color in colors) {
         if (color == null ||
             color['number'] == null ||
             color['value'] == null) {
           continue;
         }
-
         String colorNumber = color['number'].toString();
-        // Skip if we've already processed this color number
-        if (processedNumbers.contains(colorNumber)) {
-          continue;
-        }
+        if (processedNumbers.contains(colorNumber)) continue;
 
-        // Only add if the color is currently in favoriteColorNumbers
         if (widget.favoriteColorNumbers.contains(colorNumber)) {
-          debugPrint(
-              'Found favorite color: $colorNumber in category $category');
           final colorData = <String, dynamic>{
             ...color,
             'name': color['name'] ?? '',
@@ -161,23 +149,15 @@ class _FavoritesContentState extends State<FavoritesContent>
             'value': color['value'],
             'category': category,
           };
-
           favorites.add(colorData);
           processedNumbers.add(colorNumber);
-
-          // Add to wood favorites if it's from the wood category
           if (category == 'asian' || category == 'ncs') {
             woodFavorites.add(colorData);
-            debugPrint('Added to wood favorites: $colorNumber');
           }
         }
       }
     });
 
-    debugPrint('Total favorites found: ${favorites.length}');
-    debugPrint('Wood favorites found: ${woodFavorites.length}');
-
-    // Update state with new favorites lists
     if (mounted) {
       setState(() {
         _favoriteColors = favorites;
@@ -187,35 +167,22 @@ class _FavoritesContentState extends State<FavoritesContent>
   }
 
   void _handleFavoriteToggle(String colorNumber) {
-    debugPrint('Toggling favorite for: $colorNumber');
     widget.onFavoriteToggle(colorNumber);
-    // The didUpdateWidget will handle the update
   }
 
   Future<void> _handleRefresh() async {
     if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      debugPrint('Refreshing favorites...');
-      // Force a complete rebuild of the favorites list
       _updateFavoriteColors();
-      // Add a small delay to ensure the UI updates
+      await _loadNotes();
       await Future.delayed(const Duration(milliseconds: 100));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Widget _buildColorGrid(List<Map<String, dynamic>> colors) {
-    debugPrint('Building grid with ${colors.length} colors');
     if (colors.isEmpty) {
       return const Center(
         child: Padding(
@@ -225,77 +192,43 @@ class _FavoritesContentState extends State<FavoritesContent>
       );
     }
 
-    return Showcase(
-      key: _gridKey,
-      description: 'Tap on a color to view details',
-      child: GridView.builder(
-        padding: const EdgeInsets.all(8),
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.5,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
-        itemCount: colors.length,
-        itemBuilder: (context, index) {
-          final color = colors[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ColorDetailPage(
-                    color: {
-                      ...color,
-                      'tab': color['category'],
-                    },
-                    onFavoriteToggle: _handleFavoriteToggle,
-                    isFavorite: true,
-                    allColors: _allColorsWithWood
-                        .map((key, value) => MapEntry(key, value)),
-                  ),
-                ),
-              );
-            },
-            child: Card(
-              elevation: 4,
-              color: hexToColor(color['value']),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            color['name'],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${color['number']} - ${color['value']}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      physics: const AlwaysScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.80,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: colors.length,
+      itemBuilder: (context, index) {
+        final color = colors[index];
+        final colorNumber = color['number'].toString();
+        return _FavoriteColorCard(
+          color: color,
+          initialNote: _colorNotes[colorNumber] ?? '',
+          hexToColor: hexToColor,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ColorDetailPage(
+                  color: {
+                    ...color,
+                    'tab': color['category'],
+                  },
+                  onFavoriteToggle: _handleFavoriteToggle,
+                  isFavorite: true,
+                  allColors: _allColorsWithWood
+                      .map((key, value) => MapEntry(key, value)),
                 ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+          onNoteSaved: (note) => _saveNote(colorNumber, note),
+        );
+      },
     );
   }
 
@@ -306,16 +239,12 @@ class _FavoritesContentState extends State<FavoritesContent>
         title: const Text('Favorite Colors'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: Showcase(
-            key: _tabsKey,
-            description: 'Switch between All Favorites and Wood Colors',
-            child: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'All Favorites'),
-                Tab(text: 'Wood Colors'),
-              ],
-            ),
+          child: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'All Favorites'),
+              Tab(text: 'Wood Colors'),
+            ],
           ),
         ),
       ),
@@ -331,6 +260,179 @@ class _FavoritesContentState extends State<FavoritesContent>
             child: _buildColorGrid(_woodFavoriteColors),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Individual favorite color card with optional inline note input
+// ─────────────────────────────────────────────────────────────────────────────
+class _FavoriteColorCard extends StatefulWidget {
+  final Map<String, dynamic> color;
+  final String initialNote;
+  final Color Function(String) hexToColor;
+  final VoidCallback onTap;
+  final Future<void> Function(String) onNoteSaved;
+
+  const _FavoriteColorCard({
+    required this.color,
+    required this.initialNote,
+    required this.hexToColor,
+    required this.onTap,
+    required this.onNoteSaved,
+  });
+
+  @override
+  State<_FavoriteColorCard> createState() => _FavoriteColorCardState();
+}
+
+class _FavoriteColorCardState extends State<_FavoriteColorCard> {
+  late TextEditingController _noteController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: widget.initialNote);
+  }
+
+  @override
+  void didUpdateWidget(_FavoriteColorCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialNote != widget.initialNote &&
+        _noteController.text != widget.initialNote) {
+      _noteController.text = widget.initialNote;
+    }
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    FocusScope.of(context).unfocus();
+    setState(() => _isSaving = true);
+    await widget.onNoteSaved(_noteController.text);
+    if (mounted) setState(() => _isSaving = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color;
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Colors.red, width: 0.8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Color swatch – tap to navigate ───────────────
+            Expanded(
+              child: GestureDetector(
+                onTap: widget.onTap,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: widget.hexToColor(color['value']),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            // ── Color name ────────────────────────────────────
+            Text(
+              color['name'],
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 1),
+            // ── Color number · hex ───────────────────────────
+            Text(
+              '${color['number']} · ${color['value']}',
+              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            // ── Note input row ───────────────────────────────
+            SizedBox(
+              height: 32,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _noteController,
+                      maxLines: 1,
+                      style: const TextStyle(fontSize: 11),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleSave(),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 6),
+                        hintText: 'Add note…',
+                        hintStyle: TextStyle(
+                            fontSize: 11, color: Colors.grey[400]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(
+                              color: Colors.grey[300]!, width: 0.8),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(
+                              color: Colors.grey[300]!, width: 0.8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(
+                              color: Colors.deepPurple, width: 1.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // ── Save / spinner ───────────────────────────
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: _isSaving
+                        ? const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: CircularProgressIndicator(strokeWidth: 1.5),
+                          )
+                        : IconButton(
+                            padding: EdgeInsets.zero,
+                            iconSize: 18,
+                            icon: const Icon(
+                              Icons.check_circle_outline,
+                              color: Colors.deepPurple,
+                            ),
+                            onPressed: _handleSave,
+                            tooltip: 'Save note',
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/rendering.dart';
 import 'dart:convert';
+import 'package:image/image.dart' as img;
 import '../lightcolors.dart';
 import '../mediumcolors.dart';
 import '../darkcolors.dart';
@@ -96,11 +98,14 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
   final GlobalKey _wallsKey = GlobalKey();
   final GlobalKey _shareKey = GlobalKey();
   final GlobalKey _holeKey = GlobalKey();
+  final GlobalKey _magicFillKey = GlobalKey();
 
   // Add this property to store current color data
   Map<String, dynamic>? _currentColorData;
 
   bool _isLoading = false;
+  bool _isMagicFillMode = false;
+  img.Image? _cachedImg;
 
   /// Initializes the state and loads colors and favorites
   @override
@@ -140,12 +145,15 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         );
       }
     } else {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
       // Check for tutorial
       bool hasShownTutorial = prefs.getBool('hasShownDrawingTutorial') ?? false;
       if (!hasShownTutorial && mounted) {
         ShowCaseWidget.of(context).startShowCase([
           _addImageKey,
           _addPolygonKey,
+          _magicFillKey,
           _canvasShowcaseKey,
           _finishPolygonKey,
           _wallsKey,
@@ -183,7 +191,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         };
       });
     } catch (e) {
-      print('Error loading colors: $e');
+      debugPrint('Error loading colors: $e');
     }
   }
 
@@ -192,13 +200,13 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final favorites = prefs.getStringList('favoriteColors') ?? [];
-      print('Loaded favorites: $favorites');
+      debugPrint('Loaded favorites: $favorites');
       setState(() {
         _favoriteColors.clear();
         _favoriteColors.addAll(favorites);
       });
     } catch (e) {
-      print('Error loading favorites: $e');
+      debugPrint('Error loading favorites: $e');
     }
   }
 
@@ -208,7 +216,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
       final hex = hexString.startsWith('#') ? hexString : '#$hexString';
       return Color(int.parse(hex.replaceFirst('#', '0xFF')));
     } catch (e) {
-      print('Error parsing color $hexString: $e');
+      debugPrint('Error parsing color $hexString: $e');
       return Colors.black;
     }
   }
@@ -223,6 +231,18 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
       setState(() {
         backgroundImage = fi.image;
         renderedImage = fi.image;
+
+        // Reset canvas state for the new image
+        _polygons.clear();
+        _holes.clear();
+        _undoStack.clear();
+        _redoStack.clear();
+        _undoHolesStack.clear();
+        _redoHolesStack.clear();
+        _points.clear();
+        _holePoints.clear();
+        _selectedPolygonIndex = null;
+        _cachedImg = null;
       });
     }
   }
@@ -347,9 +367,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
           // Create a new color with the current opacity
           final newColor = Color.fromARGB(
             (_opacity * 255).round(),
-            _currentPolygonColor.red,
-            _currentPolygonColor.green,
-            _currentPolygonColor.blue,
+            (_currentPolygonColor.r * 255).round().clamp(0, 255),
+            (_currentPolygonColor.g * 255).round().clamp(0, 255),
+            (_currentPolygonColor.b * 255).round().clamp(0, 255),
           );
 
           // Use the stored color data if available
@@ -393,7 +413,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
 
   /// Shows the color picker modal with favorite colors and opacity buttons
   void _showColorPicker() {
-    print('Showing color picker with favorites: $_favoriteColors');
+    debugPrint('Showing color picker with favorites: $_favoriteColors');
 
     if (_favoriteColors.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -423,7 +443,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                   itemCount: _favoriteColors.length,
                   itemBuilder: (context, index) {
                     final colorNumber = _favoriteColors.elementAt(index);
-                    print('Processing color number: $colorNumber');
+                    debugPrint('Processing color number: $colorNumber');
 
                     // Find the color in all color sets
                     Color color = Colors.black;
@@ -449,7 +469,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                       final hexValue = colorData['value']?.toString() ?? '';
                       if (hexValue.isNotEmpty) {
                         color = _getColorFromHex(hexValue);
-                        print(
+                        debugPrint(
                             'Found color: $hexValue in category: $foundCategory');
                       }
                     }
@@ -461,9 +481,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                             // Update the selected polygon's color with opacity
                             final newColor = Color.fromARGB(
                               (_opacity * 255).round(),
-                              color.red,
-                              color.green,
-                              color.blue,
+                              (color.r * 255).round().clamp(0, 255),
+                              (color.g * 255).round().clamp(0, 255),
+                              (color.b * 255).round().clamp(0, 255),
                             );
                             _polygons[_selectedPolygonIndex!]['color'] =
                                 newColor;
@@ -535,9 +555,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                                                 ['color'] as Color;
                                         final newColor = Color.fromARGB(
                                           (opacity * 255).round(),
-                                          currentColor.red,
-                                          currentColor.green,
-                                          currentColor.blue,
+                                          (currentColor.r * 255).round().clamp(0, 255),
+                                          (currentColor.g * 255).round().clamp(0, 255),
+                                          (currentColor.b * 255).round().clamp(0, 255),
                                         );
                                         _polygons[_selectedPolygonIndex!]
                                             ['color'] = newColor;
@@ -549,9 +569,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                                         // Update the current drawing color
                                         _currentPolygonColor = Color.fromARGB(
                                           (opacity * 255).round(),
-                                          _currentPolygonColor.red,
-                                          _currentPolygonColor.green,
-                                          _currentPolygonColor.blue,
+                                          (_currentPolygonColor.r * 255).round().clamp(0, 255),
+                                          (_currentPolygonColor.g * 255).round().clamp(0, 255),
+                                          (_currentPolygonColor.b * 255).round().clamp(0, 255),
                                         );
                                       }
                                     });
@@ -618,9 +638,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                                         as Color;
                                 final newColor = Color.fromARGB(
                                   (value * 255).round(),
-                                  currentColor.red,
-                                  currentColor.green,
-                                  currentColor.blue,
+                                  (currentColor.r * 255).round().clamp(0, 255),
+                                  (currentColor.g * 255).round().clamp(0, 255),
+                                  (currentColor.b * 255).round().clamp(0, 255),
                                 );
                                 _polygons[_selectedPolygonIndex!]['color'] =
                                     newColor;
@@ -631,9 +651,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                                 // Update the current drawing color
                                 _currentPolygonColor = Color.fromARGB(
                                   (value * 255).round(),
-                                  _currentPolygonColor.red,
-                                  _currentPolygonColor.green,
-                                  _currentPolygonColor.blue,
+                                  (_currentPolygonColor.r * 255).round().clamp(0, 255),
+                                  (_currentPolygonColor.g * 255).round().clamp(0, 255),
+                                  (_currentPolygonColor.b * 255).round().clamp(0, 255),
                                 );
                               }
                             });
@@ -697,6 +717,54 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
       }
     }
     return c;
+  }
+
+  /// Simplifies a polygon using Ramer-Douglas-Peucker-like logic to make edges straighter
+  List<Offset> _simplifyPolygon(List<Offset> points, double epsilon) {
+    if (points.length <= 2) return points;
+
+    // Find the point with the maximum distance from the line formed by the first and last points
+    double maxDistance = 0;
+    int index = 0;
+
+    for (int i = 1; i < points.length - 1; i++) {
+      double distance = _perpendicularDistance(points[i], points[0], points.last);
+      if (distance > maxDistance) {
+        index = i;
+        maxDistance = distance;
+      }
+    }
+
+    // If max distance is greater than epsilon, recursively simplify
+    if (maxDistance > epsilon) {
+      List<Offset> left = _simplifyPolygon(points.sublist(0, index + 1), epsilon);
+      List<Offset> right = _simplifyPolygon(points.sublist(index), epsilon);
+
+      return [...left.sublist(0, left.length - 1), ...right];
+    } else {
+      return [points[0], points.last];
+    }
+  }
+
+  double _perpendicularDistance(Offset p, Offset start, Offset end) {
+    double dx = end.dx - start.dx;
+    double dy = end.dy - start.dy;
+
+    double mag = math.sqrt(dx * dx + dy * dy);
+    if (mag > 0) {
+      dx /= mag;
+      dy /= mag;
+    }
+
+    double pvx = p.dx - start.dx;
+    double pvy = p.dy - start.dy;
+
+    double pvdot = dx * pvx + dy * pvy;
+
+    double ax = pvx - pvdot * dx;
+    double ay = pvy - pvdot * dy;
+
+    return math.sqrt(ax * ax + ay * ay);
   }
 
   // Add a method to capture the canvas as an image with embedded color information
@@ -871,7 +939,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         return imageFile;
       }
     } catch (e) {
-      print('Error capturing canvas: $e');
+      debugPrint('Error capturing canvas: $e');
     }
     return null;
   }
@@ -882,6 +950,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
       // Capture the canvas as an image with embedded color information
       File? imageFile = await _captureCanvas();
       if (imageFile == null) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to capture canvas image')),
         );
@@ -891,10 +960,11 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
       // Share the image
       await Share.shareXFiles(
         [XFile(imageFile.path)],
-        text: 'Canvas drawing with color information',
+        subject: 'Canvas drawing with color information',
       );
     } catch (e) {
-      print('Error sharing canvas: $e');
+      debugPrint('Error sharing canvas: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to share canvas')),
       );
@@ -911,7 +981,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
     return {
       'points':
           (polygon['points'] as List<Offset>).map(_serializeOffset).toList(),
-      'color': (polygon['color'] as Color).value,
+      'color': (polygon['color'] as Color).toARGB32(),
       'colorNumber': polygon['colorNumber'],
       'colorName': polygon['colorName'],
       'category': polygon['category'],
@@ -937,7 +1007,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
   Map<String, dynamic> _serializeHole(Map<String, dynamic> hole) {
     return {
       'points': (hole['points'] as List<Offset>).map(_serializeOffset).toList(),
-      'color': (hole['color'] as Color).value,
+      'color': (hole['color'] as Color).toARGB32(),
     };
   }
 
@@ -1015,7 +1085,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         );
       }
     } catch (e) {
-      print('Error saving project: $e');
+      debugPrint('Error saving project: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to save project')),
@@ -1060,10 +1130,13 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () async {
+                      final navigator = Navigator.of(context);
                       projectsJson.removeAt(index);
                       await prefs.setStringList('saved_projects', projectsJson);
-                      Navigator.pop(context);
-                      _showSavedProjects();
+                      if (mounted) {
+                        navigator.pop();
+                        _showSavedProjects();
+                      }
                     },
                   ),
                   onTap: () {
@@ -1116,12 +1189,155 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
         );
       }
     } catch (e) {
-      print('Error loading project: $e');
+      debugPrint('Error loading project: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to load project')),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _performMagicFill(Offset tapPosition) async {
+    if (backgroundImage == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (_cachedImg == null) {
+        final ByteData? byteData =
+            await backgroundImage!.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData == null) return;
+        _cachedImg = img.decodeImage(byteData.buffer.asUint8List());
+      }
+
+      if (_cachedImg == null) return;
+
+      final img.Image decodedImage = _cachedImg!;
+
+      // Convert Screen Space tap to Image Space
+      final RenderBox? renderBox =
+          _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+
+      final Size canvasSize = renderBox.size;
+      final double imgW = backgroundImage!.width.toDouble();
+      final double imgH = backgroundImage!.height.toDouble();
+      final double imageAspectRatio = imgW / imgH;
+      final double canvasAspectRatio = canvasSize.width / canvasSize.height;
+
+      double scale;
+      double dx = 0;
+      double dy = 0;
+
+      if (imageAspectRatio > canvasAspectRatio) {
+        scale = canvasSize.width / imgW;
+        dy = (canvasSize.height - (imgH * scale)) / 2;
+      } else {
+        scale = canvasSize.height / imgH;
+        dx = (canvasSize.width - (imgW * scale)) / 2;
+      }
+
+      final double localX = (tapPosition.dx - dx) / scale;
+      final double localY = (tapPosition.dy - dy) / scale;
+
+      if (localX < 0 || localX >= imgW || localY < 0 || localY >= imgH) return;
+
+      final int x = localX.toInt();
+      final int y = localY.toInt();
+
+      final img.Color seedColor = decodedImage.getPixel(x, y);
+      final double sr = seedColor.r.toDouble();
+      final double sg = seedColor.g.toDouble();
+      final double sb = seedColor.b.toDouble();
+
+      final List<Offset> imageSpacePoints = [];
+      const int numRays = 120; // More rays for better precision
+      const double threshold = 45.0; // ~90% similarity (sqrt(255^2 * 3) * 0.1)
+
+      for (int i = 0; i < numRays; i++) {
+        final double angle = (i * 360 / numRays) * math.pi / 180;
+        final double cosA = math.cos(angle);
+        final double sinA = math.sin(angle);
+
+        double dist = 0;
+        bool edgeFound = false;
+
+        while (!edgeFound) {
+          dist += 1; // High precision step
+          final int px = (x + dist * cosA).toInt();
+          final int py = (y + dist * sinA).toInt();
+
+          if (px < 0 ||
+              px >= decodedImage.width ||
+              py < 0 ||
+              py >= decodedImage.height) {
+            imageSpacePoints.add(Offset(
+              px.clamp(0, decodedImage.width - 1).toDouble(),
+              py.clamp(0, decodedImage.height - 1).toDouble(),
+            ));
+            edgeFound = true;
+            break;
+          }
+
+          final img.Color pixelColor = decodedImage.getPixel(px, py);
+          final double pr = pixelColor.r.toDouble();
+          final double pg = pixelColor.g.toDouble();
+          final double pb = pixelColor.b.toDouble();
+
+          final double colorDist = math.sqrt(
+              math.pow(sr - pr, 2) + math.pow(sg - pg, 2) + math.pow(sb - pb, 2));
+
+          if (colorDist > threshold) {
+            imageSpacePoints.add(Offset(px.toDouble(), py.toDouble()));
+            edgeFound = true;
+          }
+
+          if (dist > math.max(imgW, imgH)) {
+            // Safety break
+            imageSpacePoints.add(Offset(px.toDouble(), py.toDouble()));
+            edgeFound = true;
+          }
+        }
+      }
+
+      // Convert back to Screen Space
+      List<Offset> screenSpacePoints = imageSpacePoints.map((p) {
+        return Offset(p.dx * scale + dx, p.dy * scale + dy);
+      }).toList();
+
+      // Simplify the polygon to remove zig-zags and make edges straighter
+      screenSpacePoints = _simplifyPolygon(screenSpacePoints, 10.0);
+
+      _saveState();
+      setState(() {
+        _polygons.add({
+          'points': screenSpacePoints,
+          'color': _currentPolygonColor.withValues(alpha: _opacity),
+          'colorNumber': 'Auto',
+          'colorName': 'Magic Fill Area',
+          'category': 'AI',
+          'page': 'N/A',
+          'name': 'Area ${_polygons.length + 1}',
+        });
+        _isMagicFillMode = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Surface filled successfully!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Magic fill error: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -1238,7 +1454,7 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.3),
+                              color: Colors.grey.withValues(alpha: 0.3),
                               blurRadius: 5,
                               offset: const Offset(0, 2),
                             ),
@@ -1254,7 +1470,9 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                               key: _canvasKey,
                               child: GestureDetector(
                                 onTap: () {
-                                  if (!_isDrawingPolygon && !_isDrawingHole) {
+                                  if (!_isDrawingPolygon &&
+                                      !_isDrawingHole &&
+                                      !_isMagicFillMode) {
                                     final tapPosition = _lastTapPosition;
                                     if (tapPosition != null) {
                                       for (int i = 0;
@@ -1279,7 +1497,10 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
                                 onTapDown: (details) {
                                   setState(() {
                                     _lastTapPosition = details.localPosition;
-                                    if (_isDrawingPolygon || _isDrawingHole) {
+                                    if (_isMagicFillMode) {
+                                      _performMagicFill(details.localPosition);
+                                    } else if (_isDrawingPolygon ||
+                                        _isDrawingHole) {
                                       if (_isDrawingHole) {
                                         _holePoints.add(details.localPosition);
                                         // Force rebuild of hole points
@@ -1360,6 +1581,37 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
             ),
           ),
           const SizedBox(height: 16),
+          Showcase(
+            key: _magicFillKey,
+            description: 'Use Magic Fill to automatically detect wall area',
+            child: FloatingActionButton(
+              heroTag: 'magic',
+              backgroundColor: _isMagicFillMode ? Colors.orange : null,
+              onPressed: () {
+                if (backgroundImage == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Please add a background image first')),
+                  );
+                  return;
+                }
+                setState(() {
+                  _isMagicFillMode = !_isMagicFillMode;
+                  _isDrawingPolygon = false;
+                  _isDrawingHole = false;
+                });
+                if (_isMagicFillMode) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Tap on a wall to fill it automatically'),
+                        duration: Duration(seconds: 2)),
+                  );
+                }
+              },
+              child: const Icon(Icons.auto_fix_high),
+            ),
+          ),
+          const SizedBox(height: 16),
           if (_polygons.isNotEmpty)
             Showcase(
               key: _holeKey,
@@ -1423,8 +1675,8 @@ class _DrawingPainter extends CustomPainter {
     }
 
     return Matrix4.identity()
-      ..translate(dx, dy)
-      ..scale(scale);
+      ..setTranslationRaw(dx, dy, 0.0)
+      ..scaleByDouble(scale, scale, 1.0, 1.0);
   }
 
   /// Transforms a point from screen coordinates to image coordinates
