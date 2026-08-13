@@ -541,7 +541,7 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
         isFavorite: isFavorite,
         allColors: colors,
         hexToColor: hexToColor,
-        showWheel: category == 'medium' || category == 'dark',
+        showWheel: true,
         isSearchActive: searchQuery.isNotEmpty,
       );
     } catch (e) {
@@ -594,6 +594,7 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
             ),
             Expanded(
               child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
                 children: visibleTabs.map((tab) {
                   return _buildColorGrid(tab);
                 }).toList(),
@@ -715,8 +716,11 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              Share.share(
-                  'Check out this amazing Color Palette app! https://play.google.com/store/apps/details?id=com.color.paletteasian');
+              SharePlus.instance.share(
+                ShareParams(
+                  text: 'Check out this amazing Color Palette app! https://play.google.com/store/apps/details?id=com.color.paletteasian',
+                ),
+              );
             },
           ),
         ],
@@ -752,6 +756,7 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
                   ? const Center(child: CircularProgressIndicator())
                   : TabBarView(
                       controller: _mainTabController,
+                      physics: const NeverScrollableScrollPhysics(),
                       children: List.generate(visibleTabs.length, (index) {
                         if (index == 0 && hasAsianResults) {
                           return _buildAsianTabView();
@@ -1120,6 +1125,7 @@ class _OpusTabViewState extends State<OpusTabView>
         Expanded(
           child: TabBarView(
             controller: _subTabController,
+            physics: const NeverScrollableScrollPhysics(),
             children: _categories.map((category) {
               return _buildColorGrid(_categorizedColors[category] ?? [], category);
             }).toList(),
@@ -1556,10 +1562,11 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
           !_wheelPages.contains(allMediumPages.last)) {
         _wheelPages.add(allMediumPages.last);
       }
-    } else if (widget.category == 'dark') {
-      _wheelPages = _lastColorOfAllPages.keys.toList()..sort();
     } else {
-      _wheelPages = _sortedPages;
+      _wheelPages = _lastColorOfAllPages.keys.toList()..sort();
+      if (_wheelPages.isEmpty) {
+        _wheelPages = _sortedPages;
+      }
     }
   }
 
@@ -1585,6 +1592,17 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
         duration: Duration(milliseconds: isLive ? 100 : 300),
         curve: isLive ? Curves.linear : Curves.easeOutCubic,
       );
+    } else if (_scrollController.hasClients && _sortedPages.isNotEmpty) {
+      final pageIndex = _sortedPages.indexOf(targetPage);
+      if (pageIndex != -1) {
+        final targetOffset = (pageIndex / _sortedPages.length) *
+            _scrollController.position.maxScrollExtent;
+        _scrollController.animateTo(
+          targetOffset,
+          duration: Duration(milliseconds: isLive ? 100 : 300),
+          curve: isLive ? Curves.linear : Curves.easeOutCubic,
+        );
+      }
     }
   }
 
@@ -1646,47 +1664,52 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onPanStart: (details) => _handleHorizontalBarInteraction(
-                        details.localPosition, barWidth),
-                    onPanUpdate: (details) => _handleHorizontalBarInteraction(
-                        details.localPosition, barWidth),
-                    onTapDown: (details) => _handleHorizontalBarInteraction(
-                        details.localPosition, barWidth),
-                    onPanEnd: (_) => setState(() => _hoveredIndex = null),
-                    onTapUp: (_) => setState(() => _hoveredIndex = null),
-                    onTapCancel: () => setState(() => _hoveredIndex = null),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CustomPaint(
-                          size: Size(barWidth, 40),
-                          painter: HorizontalColorBarPainter(
-                            pages: _wheelPages,
-                            lastColors: _lastColorOfAllPages,
-                            hexToColor: widget.hexToColor,
-                            hoveredIndex: _hoveredIndex,
-                          ),
-                        ),
-                        if (activePage != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black87,
-                              borderRadius: BorderRadius.circular(12),
+                  child: MouseRegion(
+                    onHover: (event) => _handleHorizontalBarInteraction(
+                        event.localPosition, barWidth),
+                    onExit: (_) => setState(() => _hoveredIndex = null),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onPanStart: (details) => _handleHorizontalBarInteraction(
+                          details.localPosition, barWidth),
+                      onPanUpdate: (details) => _handleHorizontalBarInteraction(
+                          details.localPosition, barWidth),
+                      onTapDown: (details) => _handleHorizontalBarInteraction(
+                          details.localPosition, barWidth),
+                      onPanEnd: (_) => setState(() => _hoveredIndex = null),
+                      onTapUp: (_) => setState(() => _hoveredIndex = null),
+                      onTapCancel: () => setState(() => _hoveredIndex = null),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CustomPaint(
+                            size: Size(barWidth, 40),
+                            painter: HorizontalColorBarPainter(
+                              pages: _wheelPages,
+                              lastColors: _lastColorOfAllPages,
+                              hexToColor: widget.hexToColor,
+                              hoveredIndex: _hoveredIndex,
                             ),
-                            child: Text(
-                              'Page $activePage',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                          ),
+                          if (activePage != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black87,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Page $activePage',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

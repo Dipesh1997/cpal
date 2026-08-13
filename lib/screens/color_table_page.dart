@@ -40,14 +40,6 @@ class _ColorTablePageState extends State<ColorTablePage>
   late TabController _tabController;
   final Map<String, Color> _colorCache = {};
 
-  // Lazy loading configuration
-  final Map<String, int> _loadedItemsCount = {
-    'asian': 20,
-    'ncs': 20,
-  };
-  final Map<String, List<dynamic>> _cachedFilteredColors = {};
-  final bool _isLoadingMore = false;
-
   @override
   void initState() {
     super.initState();

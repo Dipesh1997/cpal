@@ -48,3 +48,10 @@ app.*.map.json
 build_log*.txt
 analyze_output*.txt
 build_output*.txt
+
+# Gradle & Build Cache
+.gradle/
+**/android/.gradle/
+*.zip
+gradle-*.zip
+

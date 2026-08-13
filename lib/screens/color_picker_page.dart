@@ -42,7 +42,6 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
   final GlobalKey _initialButtonKey = GlobalKey();
   File? _image;
   ui.Image? _uiImage;
-  bool _showSimilarColors = false;
   Set<String> _favoriteColors = {};
 
   @override
@@ -128,7 +127,6 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
         _image = imageFile;
         _uiImage = fi.image;
         selectedColor = Colors.transparent;
-        _showSimilarColors = false;
       });
 
       // Check if we need to show the second part of the tutorial
@@ -205,7 +203,6 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
     if (color != null) {
       setState(() {
         selectedColor = color;
-        _showSimilarColors = true;
       });
     }
   }
@@ -222,7 +219,6 @@ class _ColorPickerContentState extends State<ColorPickerContent> {
     if (color != null) {
       setState(() {
         selectedColor = color;
-        _showSimilarColors = true;
       });
     }
   }

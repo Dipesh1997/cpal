@@ -958,9 +958,11 @@ class _DrawingCanvasContentState extends State<DrawingCanvasContent> {
       }
 
       // Share the image
-      await Share.shareXFiles(
-        [XFile(imageFile.path)],
-        subject: 'Canvas drawing with color information',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(imageFile.path)],
+          subject: 'Canvas drawing with color information',
+        ),
       );
     } catch (e) {
       debugPrint('Error sharing canvas: $e');

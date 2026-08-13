@@ -107,9 +107,9 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
     Color color1 = hexToColor(color1Hex);
     Color color2 = hexToColor(color2Hex);
 
-    double rDiff = (color1.red - color2.red).abs().toDouble();
-    double gDiff = (color1.green - color2.green).abs().toDouble();
-    double bDiff = (color1.blue - color2.blue).abs().toDouble();
+    double rDiff = ((color1.r * 255.0).round().clamp(0, 255) - (color2.r * 255.0).round().clamp(0, 255)).abs().toDouble();
+    double gDiff = ((color1.g * 255.0).round().clamp(0, 255) - (color2.g * 255.0).round().clamp(0, 255)).abs().toDouble();
+    double bDiff = ((color1.b * 255.0).round().clamp(0, 255) - (color2.b * 255.0).round().clamp(0, 255)).abs().toDouble();
 
     // Calculate Euclidean distance in RGB space
     return sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
@@ -399,7 +399,7 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
                           ),
                         );
                       },
-                      backgroundColor: Colors.white.withOpacity(0.8),
+                      backgroundColor: Colors.white.withValues(alpha: 0.8),
                       child:
                           const Icon(Icons.fullscreen, color: Colors.black87),
                     ),
