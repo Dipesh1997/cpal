@@ -488,14 +488,25 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
                   String name = (color['name'] ?? '').toString();
                   String number = (color['number'] ?? '').toString();
                   String value = (color['value'] ?? '').toString();
+                  String page = (color['page'] ?? '').toString();
+                  String colorNovaPage =
+                      (color['cNP'] ?? color['colorNovaPage'] ?? color['details'] ?? '')
+                          .toString();
 
                   bool nameMatch = name.toLowerCase().contains(normalizedQuery);
                   bool numberMatch =
                       number.toLowerCase().contains(normalizedQuery);
                   bool valueMatch =
                       value.toLowerCase().contains(normalizedQuery);
+                  bool pageMatch = page.toLowerCase() == normalizedQuery ||
+                      'page $page'.toLowerCase() == normalizedQuery;
+                  bool novaMatch = (colorNovaPage.isNotEmpty &&
+                          colorNovaPage.toLowerCase() == normalizedQuery) ||
+                      (colorNovaPage.isNotEmpty &&
+                          'color nova $colorNovaPage'.contains(normalizedQuery));
 
-                  bool isMatch = nameMatch || numberMatch || valueMatch;
+                  bool isMatch =
+                      nameMatch || numberMatch || valueMatch || pageMatch || novaMatch;
 
                   return isMatch;
                 } catch (e) {
@@ -1741,9 +1752,9 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   sliver: SliverGrid(
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                        SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 1.5,
+                      childAspectRatio: widget.isSearchActive ? 1.25 : 1.5,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
@@ -1756,6 +1767,8 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
                           }
 
                           var color = pageColors[index];
+                          final colorNovaPage =
+                              color['cNP'] ?? color['colorNovaPage'] ?? color['details'];
                           return Card(
                             elevation: 4,
                             shape: RoundedRectangleBorder(
@@ -1806,7 +1819,7 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     Text(
                                       color['number'],
                                       style: const TextStyle(
@@ -1815,6 +1828,19 @@ class _ColorGridWithWheelState extends State<ColorGridWithWheel> {
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
+                                    if (widget.isSearchActive &&
+                                        colorNovaPage != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Color Nova: $colorNovaPage',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.deepPurple,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

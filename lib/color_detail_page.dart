@@ -218,6 +218,9 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
         ),
       ];
     } else {
+      final colorNovaPage = widget.color['cNP'] ??
+          widget.color['colorNovaPage'] ??
+          widget.color['details'];
       details = [
         Text(
           'Number: ${widget.color['number']}',
@@ -247,6 +250,15 @@ class _ColorDetailPageState extends State<ColorDetailPage> {
             fontSize: 18,
           ),
         ),
+        if (colorNovaPage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Color Nova page number: $colorNovaPage',
+            style: const TextStyle(
+              fontSize: 18,
+            ),
+          ),
+        ],
       ];
     }
 
