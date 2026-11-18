@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="/cpal/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Color Pallete - AI-Powered Asian Paints Color Palette, Color Picker, and Wall Drawing Tool.">
+
+  <!-- Viewport for Android WebView / Mobile App -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- Android & Web App Meta Tags -->
+  <meta name="theme-color" content="#673AB7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Color Pallete">
+
+  <!-- iOS Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Color Pallete">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon & Manifest -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-6710120263757804" crossorigin="anonymous"></script>
+
+  <title>Color Pallete</title>
+
+  <style>
+    :root {
+      --primary-color: #673AB7;
+      --primary-dark: #512DA8;
+      --bg-color: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      overscroll-behavior: none;
+      touch-action: pan-x pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Fixed Splash / Loading Screen */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      transition: opacity 0.4s ease-out;
+    }
+
+    .splash-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(103, 58, 183, 0.25);
+      margin-bottom: 20px;
+    }
+
+    .splash-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 6px;
+    }
+
+    .splash-subtitle {
+      font-size: 13px;
+      color: #757575;
+      margin-bottom: 24px;
+    }
+
+    .splash-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(103, 58, 183, 0.2);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Instagram-Style "Add to Home Screen" Shortcut Banner */
+    #pwa-install-banner {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      max-width: 440px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 999999;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      animation: slideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(120%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .pwa-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .pwa-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pwa-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pwa-subtitle {
+      font-size: 12px;
+      color: #666666;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    .pwa-install-btn {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(103, 58, 183, 0.35);
+      transition: transform 0.15s;
+    }
+
+    .pwa-install-btn:active {
+      transform: scale(0.96);
+    }
+
+    .pwa-close-btn {
+      background: transparent;
+      border: none;
+      color: #999999;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* iOS Safari Install Instructions Sheet */
+    #ios-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000000;
+      justify-content: center;
+      align-items: flex-end;
+      padding: 16px;
+    }
+
+    .ios-modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      animation: slideUp 0.3s ease;
+    }
+
+    .ios-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 14px 0;
+      text-align: left;
+      font-size: 14px;
+      color: #333333;
+    }
+
+    .ios-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: #ffffff;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash / Loading Screen -->
+  <div id="splash-screen">
+    <img src="favicon.png" alt="Color Pallete Icon" class="splash-logo">
+    <div class="splash-title">Color Pallete</div>
+    <div class="splash-subtitle">AI-Powered Asian Paints Color System</div>
+    <div class="splash-spinner"></div>
+  </div>
+
+  <!-- Instagram-Style "Add to Home Screen" Shortcut Banner -->
+  <div id="pwa-install-banner">
+    <img src="favicon.png" alt="Color Pallete Logo" class="pwa-icon">
+    <div class="pwa-info">
+      <div class="pwa-title">Color Pallete</div>
+      <div class="pwa-subtitle">Add to Home screen for full-screen offline app</div>
+    </div>
+    <button class="pwa-install-btn" id="pwa-install-action" onclick="triggerPwaInstall()">Install</button>
+    <button class="pwa-close-btn" onclick="dismissPwaBanner()" title="Close">✕</button>
+  </div>
+
+  <!-- iOS Safari Install Instructions Sheet -->
+  <div id="ios-modal" onclick="closeIosModal(event)">
+    <div class="ios-modal-card">
+      <img src="favicon.png" alt="Color Pallete Logo" style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 12px;">
+      <h3 style="margin: 0 0 6px 0; font-size: 18px; color: #1a1a1a;">Install Color Pallete on iPhone</h3>
+      <p style="font-size: 13px; color: #666; margin: 0 0 16px 0;">Add to your Home Screen for the full-screen app experience:</p>
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div>Tap the <strong>Share</strong> icon ( <span style="font-size: 18px;">⎋</span> or <span style="font-size: 18px;">⬆</span> ) in Safari's bottom toolbar.</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div>Scroll down and select <strong>Add to Home Screen</strong> ( ➕ ).</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div>Tap <strong>Add</strong> at the top right corner.</div>
+      </div>
+      <button class="pwa-install-btn" style="width: 100%; margin-top: 16px;" onclick="document.getElementById('ios-modal').style.display='none'">Got It</button>
+    </div>
+  </div>
+
+  <script>
+    // Register Offline Service Worker for High-Speed Browser Caching
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .then((registration) => {
+            console.log('[Color Pallete] Offline Service Worker registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.warn('[Color Pallete] Service Worker registration failed:', error);
+          });
+      });
+    }
+
+    // Reliable Splash Screen Dismissal Mechanism
+    function dismissSplash() {
+      const splash = document.getElementById('splash-screen');
+      if (splash && splash.style.opacity !== '0') {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 400);
+      }
+    }
+
+    // Dismiss when Flutter renders first frame
+    window.addEventListener('flutter-first-frame', dismissSplash);
+
+    // Watch for Flutter view injected into document.body
+    const domObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.tagName && (
+            node.tagName.toLowerCase() === 'flt-glass-pane' ||
+            node.tagName.toLowerCase() === 'flutter-view' ||
+            node.tagName.toLowerCase() === 'flt-scene-host'
+          )) {
+            setTimeout(dismissSplash, 200);
+            domObserver.disconnect();
+            return;
+          }
+        }
+      }
+    });
+    domObserver.observe(document.body, { childList: true, subtree: true });
+
+    // Absolute fallback: never keep user stuck on splash screen for more than 4 seconds
+    setTimeout(dismissSplash, 4000);
+
+    // PWA Install Prompt (Instagram Style)
+    let deferredPrompt = null;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Show banner if not installed and not dismissed recently
+      const dismissed = localStorage.getItem('cpal_pwa_dismissed');
+      if (!isStandalone && !dismissed) {
+        setTimeout(() => {
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) banner.style.display = 'flex';
+        }, 1500);
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[Color Pallete] App installed to Home Screen');
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+      deferredPrompt = null;
+    });
+
+    // On iOS Safari, display the prompt banner if not in standalone
+    if (isIos && !isStandalone) {
+      const dismissed = localStorage.getItem('cpal_pwa_dismissed');
+      if (!dismissed) {
+        setTimeout(() => {
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) banner.style.display = 'flex';
+        }, 2000);
+      }
+    }
+
+    function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            dismissPwaBanner();
+          }
+          deferredPrompt = null;
+        });
+      } else if (isIos) {
+        document.getElementById('ios-modal').style.display = 'flex';
+      } else {
+        alert('To add to Home screen:\nTap your browser menu (⋮ or Share) and select "Install app" or "Add to Home screen".');
+      }
+    }
+
+    function dismissPwaBanner() {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+      localStorage.setItem('cpal_pwa_dismissed', Date.now());
+    }
+
+    function closeIosModal(e) {
+      if (e.target.id === 'ios-modal') {
+        document.getElementById('ios-modal').style.display = 'none';
+      }
+    }
+  </script>
+
+  <!-- Modern Flutter Bootstrap Script -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
