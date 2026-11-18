@@ -1,96 +1,554 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Asian Paints Color Palette">
+  <meta name="description" content="CPAL - AI-Powered Asian Paints Color Palette, Color Picker, and Wall Drawing Tool.">
 
-  <!-- iOS meta tags & icons -->
+  <!-- Viewport for Android WebView / Mobile App -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- Android & Web App Meta Tags -->
+  <meta name="theme-color" content="#673AB7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="CPAL">
+
+  <!-- iOS Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="paletteasian">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CPAL">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
+  <!-- Favicon & Manifest -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <!-- AdMob -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-6710120263757804"
-     crossorigin="anonymous"></script>
-
-  <title>paletteasian</title>
   <link rel="manifest" href="manifest.json">
 
-  <script>
-    // The value below is injected by flutter build, do not touch.
-    const serviceWorkerVersion = null;
-  </script>
-  <!-- This script adds the flutter initialization JS code -->
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-6710120263757804" crossorigin="anonymous"></script>
+
+  <title>CPAL - Color Palette</title>
+
+  <!-- Modern Flutter Web Loader -->
   <script src="flutter.js" defer></script>
+
   <style>
-    .loading {
+    :root {
+      --primary-color: #673AB7;
+      --primary-dark: #512DA8;
+      --bg-color: #f0f2f5;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      overscroll-behavior: none;
+      touch-action: pan-x pan-y;
+    }
+
+    /* Desktop View Container: Android Phone Mockup Frame */
+    @media (min-width: 601px) {
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #1e1e24 0%, #2b2b36 100%);
+      }
+
+      #app-wrapper {
+        position: relative;
+        width: 420px;
+        height: 860px;
+        max-height: 94vh;
+        border-radius: 40px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 0 10px #2f3136;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Fullscreen mode toggle for desktop */
+      #app-wrapper.fullscreen-mode {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+
+      /* Android Status Bar Simulation on Desktop */
+      #android-status-bar {
+        height: 28px;
+        background-color: var(--primary-color);
+        color: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 16px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 1000;
+        flex-shrink: 0;
+      }
+
+      #desktop-controls {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 10000;
+        display: flex;
+        gap: 8px;
+      }
+
+      .desktop-btn {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .desktop-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-1px);
+      }
+    }
+
+    /* Mobile View Container: Native Android Style WebView */
+    @media (max-width: 600px) {
+      body {
+        background-color: #ffffff;
+      }
+
+      #app-wrapper {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #android-status-bar {
+        display: none;
+      }
+
+      #desktop-controls {
+        display: none;
+      }
+    }
+
+    /* Flutter App Viewport */
+    #flutter-container {
+      width: 100%;
+      height: 100%;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Splash / Loading Screen */
+    #splash-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #ffffff;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
+      z-index: 9999;
+      transition: opacity 0.4s ease-out;
     }
-    .loader {
-      border: 8px solid #f3f3f3;
+
+    .splash-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(103, 58, 183, 0.25);
+      margin-bottom: 20px;
+    }
+
+    .splash-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 6px;
+    }
+
+    .splash-subtitle {
+      font-size: 13px;
+      color: #757575;
+      margin-bottom: 24px;
+    }
+
+    .splash-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(103, 58, 183, 0.2);
+      border-top-color: var(--primary-color);
       border-radius: 50%;
-      border-top: 8px solid #3498db;
-      width: 60px;
-      height: 60px;
-      -webkit-animation: spin 1s linear infinite;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
     }
-    @-webkit-keyframes spin {
-      0% { -webkit-transform: rotate(0deg); }
-      100% { -webkit-transform: rotate(360deg); }
-    }
+
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Instagram-Style "Add to Home Screen" Shortcut Banner */
+    #pwa-install-banner {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      max-width: 440px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 99999;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      animation: slideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(120%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .pwa-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .pwa-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pwa-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pwa-subtitle {
+      font-size: 12px;
+      color: #666666;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    .pwa-install-btn {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(103, 58, 183, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .pwa-install-btn:active {
+      transform: scale(0.96);
+    }
+
+    .pwa-close-btn {
+      background: transparent;
+      border: none;
+      color: #999999;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* iOS Safari Instruction Modal */
+    #ios-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100000;
+      justify-content: center;
+      align-items: flex-end;
+      padding: 16px;
+    }
+
+    .ios-modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      animation: slideUp 0.3s ease;
+    }
+
+    .ios-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 14px 0;
+      text-align: left;
+      font-size: 14px;
+      color: #333333;
+    }
+
+    .ios-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: #ffffff;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
-  <div class="loading">
-    <div class="loader"></div>
+
+  <!-- Desktop Controls -->
+  <div id="desktop-controls">
+    <button class="desktop-btn" id="toggle-frame-btn" onclick="toggleDesktopMode()">
+      <span>⛶</span> Full Screen
+    </button>
   </div>
+
+  <!-- Android App Style WebView Shell -->
+  <div id="app-wrapper">
+    <!-- Simulated Android Status Bar for Desktop View -->
+    <div id="android-status-bar">
+      <span id="status-clock">12:00</span>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <span>LTE</span>
+        <span>📶</span>
+        <span>🔋 100%</span>
+      </div>
+    </div>
+
+    <!-- Flutter Container -->
+    <div id="flutter-container">
+      <!-- Splash / Loading Screen -->
+      <div id="splash-screen">
+        <img src="favicon.png" alt="CPAL Icon" class="splash-logo">
+        <div class="splash-title">Color Palette</div>
+        <div class="splash-subtitle">AI-Powered Asian Paints Color System</div>
+        <div class="splash-spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instagram-Style "Add to Home Screen" Shortcut Banner -->
+  <div id="pwa-install-banner">
+    <img src="favicon.png" alt="CPAL Logo" class="pwa-icon">
+    <div class="pwa-info">
+      <div class="pwa-title">CPAL - Color Palette</div>
+      <div class="pwa-subtitle">Add to Home screen for full-screen offline app</div>
+    </div>
+    <button class="pwa-install-btn" id="pwa-install-action" onclick="triggerPwaInstall()">Install</button>
+    <button class="pwa-close-btn" onclick="dismissPwaBanner()" title="Close">✕</button>
+  </div>
+
+  <!-- iOS Safari Install Instructions Sheet -->
+  <div id="ios-modal" onclick="closeIosModal(event)">
+    <div class="ios-modal-card">
+      <img src="favicon.png" alt="CPAL Logo" style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 12px;">
+      <h3 style="margin: 0 0 6px 0; font-size: 18px; color: #1a1a1a;">Install CPAL on iPhone</h3>
+      <p style="font-size: 13px; color: #666; margin: 0 0 16px 0;">Add to your Home Screen for the full-screen app experience:</p>
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div>Tap the <strong>Share</strong> icon ( <span style="font-size: 18px;">⎋</span> or <span style="font-size: 18px;">⬆</span> ) in Safari's bottom toolbar.</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div>Scroll down and select <strong>Add to Home Screen</strong> ( ➕ ).</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div>Tap <strong>Add</strong> at the top right corner.</div>
+      </div>
+      <button class="pwa-install-btn" style="width: 100%; margin-top: 16px;" onclick="document.getElementById('ios-modal').style.display='none'">Got It</button>
+    </div>
+  </div>
+
+  <!-- Service Worker, Caching & PWA Scripts -->
   <script>
-    window.addEventListener('load', function(ev) {
-      var loading = document.querySelector('.loading');
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-            loading.remove();
+    // Register Offline Service Worker for High-Speed Browser Caching
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .then((registration) => {
+            console.log('[CPAL] Offline Service Worker registered with scope:', registration.scope);
+          })
+          .catch((error) => {
+            console.warn('[CPAL] Service Worker registration failed:', error);
           });
-        }
       });
+    }
+
+    // Update Status Bar Clock on Desktop
+    function updateClock() {
+      const clockEl = document.getElementById('status-clock');
+      if (clockEl) {
+        const now = new Date();
+        clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Toggle Desktop View (Phone Mockup vs Fullscreen)
+    let isFullscreenMode = false;
+    function toggleDesktopMode() {
+      const wrapper = document.getElementById('app-wrapper');
+      const btn = document.getElementById('toggle-frame-btn');
+      isFullscreenMode = !isFullscreenMode;
+      if (isFullscreenMode) {
+        wrapper.classList.add('fullscreen-mode');
+        btn.innerHTML = '<span>📱</span> Mobile Frame';
+      } else {
+        wrapper.classList.remove('fullscreen-mode');
+        btn.innerHTML = '<span>⛶</span> Full Screen';
+      }
+    }
+
+    // PWA Install Prompt (Instagram Style)
+    let deferredPrompt = null;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Show banner if not installed and not dismissed recently
+      const dismissed = localStorage.getItem('cpal_pwa_dismissed');
+      if (!isStandalone && !dismissed) {
+        setTimeout(() => {
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) banner.style.display = 'flex';
+        }, 1500);
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[CPAL] App installed to Home Screen');
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+      deferredPrompt = null;
+    });
+
+    // On iOS Safari, display the prompt banner if not in standalone
+    if (isIos && !isStandalone) {
+      const dismissed = localStorage.getItem('cpal_pwa_dismissed');
+      if (!dismissed) {
+        setTimeout(() => {
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) banner.style.display = 'flex';
+        }, 2000);
+      }
+    }
+
+    function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('[CPAL] User accepted install prompt');
+            dismissPwaBanner();
+          }
+          deferredPrompt = null;
+        });
+      } else if (isIos) {
+        document.getElementById('ios-modal').style.display = 'flex';
+      } else {
+        alert('To add to Home screen:\nTap your browser menu (⋮ or Share) and select "Install app" or "Add to Home screen".');
+      }
+    }
+
+    function dismissPwaBanner() {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+      localStorage.setItem('cpal_pwa_dismissed', Date.now());
+    }
+
+    function closeIosModal(e) {
+      if (e.target.id === 'ios-modal') {
+        document.getElementById('ios-modal').style.display = 'none';
+      }
+    }
+
+    // Initialize Flutter Engine inside flutter-container
+    window.addEventListener('load', function() {
+      const splash = document.getElementById('splash-screen');
+      const container = document.getElementById('flutter-container');
+
+      if (window._flutter && window._flutter.loader) {
+        _flutter.loader.load({
+          onEntrypointLoaded: async function(engineInitializer) {
+            const appRunner = await engineInitializer.initializeEngine({
+              hostElement: container
+            });
+            await appRunner.runApp();
+            // Smoothly remove splash screen
+            if (splash) {
+              splash.style.opacity = '0';
+              setTimeout(() => splash.remove(), 400);
+            }
+          }
+        });
+      }
     });
   </script>
 </body>

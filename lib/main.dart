@@ -20,6 +20,8 @@ import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:async';
+import 'services/daily_ad_service.dart';
+import 'screens/daily_ad_gate_page.dart';
 
 // Main entry point for the Color Palette application
 void main() async {
@@ -108,9 +110,20 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    // Navigate to main screen after animation - reduced from 2s to 1.2s
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
+    // Count this app open (for first 20 app opens: no overlay or toast, normal use)
+    DailyAdService.instance.incrementAppOpenCount();
+
+    // Navigate to main screen or daily ad gate after animation
+    Future.delayed(const Duration(milliseconds: 1200), () async {
+      if (!mounted) return;
+      final shouldGate = await DailyAdService.instance.shouldGateAccess();
+      if (!mounted) return;
+      if (shouldGate) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const DailyAdGatePage()),
+        );
+      } else {
+        // First 20 opens or already unlocked today: let user use as normal
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const ColorPalettePage()),
         );
@@ -304,7 +317,7 @@ class ColorPaletteContent extends StatefulWidget {
 
 /// State class for ColorPaletteContent
 class _ColorPaletteContentState extends State<ColorPaletteContent>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   // Color data and search state
   late Map<String, List<dynamic>> colors;
   String searchQuery = '';
@@ -331,6 +344,7 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     loadColorsAndFavorites();
     _mainTabController = TabController(length: 1, vsync: this);
     _mainTabController.addListener(_handleMainTabChange);
@@ -340,12 +354,29 @@ class _ColorPaletteContentState extends State<ColorPaletteContent>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _mainTabController.removeListener(_handleMainTabChange);
     _mainTabController.dispose();
     _asianTabController?.dispose();
     _tabViewCache.clear();
     _asianTabViewCache.clear();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkDailyAdGate();
+    }
+  }
+
+  Future<void> _checkDailyAdGate() async {
+    final shouldGate = await DailyAdService.instance.shouldGateAccess();
+    if (shouldGate && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const DailyAdGatePage()),
+      );
+    }
   }
 
   void _handleMainTabChange() {
@@ -1160,6 +1191,7 @@ class _AboutPageState extends State<AboutPage> {
   RewardedAd? _rewardedAd;
   bool _isRewardedAdReady = false;
   String _version = '';
+  bool _isDailyUnlocked = false;
 
   @override
   void initState() {
@@ -1170,6 +1202,16 @@ class _AboutPageState extends State<AboutPage> {
       _loadRewardedAd();
     }
     _loadVersion();
+    _checkDailyStatus();
+  }
+
+  Future<void> _checkDailyStatus() async {
+    final unlocked = await DailyAdService.instance.isDailyAdUnlockedForToday();
+    if (mounted) {
+      setState(() {
+        _isDailyUnlocked = unlocked;
+      });
+    }
   }
 
   Future<void> _loadVersion() async {
@@ -1252,11 +1294,18 @@ class _AboutPageState extends State<AboutPage> {
         onUserEarnedReward: (ad, reward) {
           // Handle reward
           debugPrint('User earned reward: ${reward.amount} ${reward.type}');
+          DailyAdService.instance.markDailyAdWatchedToday();
           if (mounted) {
+            setState(() {
+              _isDailyUnlocked = true;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Reward earned: ${reward.amount} ${reward.type}'),
-                duration: const Duration(seconds: 2),
+              const SnackBar(
+                content: Text(
+                  'Daily video ad watched! You have full ad-free access for the whole day.',
+                ),
+                backgroundColor: Colors.deepPurple,
+                duration: Duration(seconds: 3),
               ),
             );
           }
@@ -1417,15 +1466,71 @@ class _AboutPageState extends State<AboutPage> {
                     ),
             ),
             const SizedBox(height: 16),
+            // Daily Ad Status & Explanation Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.deepPurple.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _isDailyUnlocked
+                            ? Icons.check_circle_rounded
+                            : Icons.info_outline_rounded,
+                        color: _isDailyUnlocked
+                            ? Colors.green[700]
+                            : Colors.deepPurple,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _isDailyUnlocked
+                              ? 'Daily Ad Watched'
+                              : 'One-Time Ad for the Whole Day',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: _isDailyUnlocked
+                                ? Colors.green[800]
+                                : Colors.deepPurple.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _isDailyUnlocked
+                        ? 'You have already watched today\'s ad! You can use the app for the whole day without watching any more ads.'
+                        : 'This is a one-time ad for the whole day. You can use the app the whole day without watching the ad again. '
+                            'We only show 1 ad per day to keep your color picking and drawing experience clean and completely free from frequent interruptions!',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             // Video Ad Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _isRewardedAdReady ? _showRewardedAd : null,
                 icon: const Icon(Icons.play_circle_outline),
-                label: const Text(
-                  'Watch Video Ad',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                label: Text(
+                  _isDailyUnlocked ? 'Watch Video Ad Again' : 'Watch Video Ad',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
