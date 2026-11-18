@@ -30,21 +30,16 @@
 
   <title>CPAL - Color Palette</title>
 
-  <!-- Modern Flutter Web Loader -->
-  <script src="flutter.js" defer></script>
-
   <style>
     :root {
       --primary-color: #673AB7;
       --primary-dark: #512DA8;
-      --bg-color: #f0f2f5;
+      --bg-color: #ffffff;
     }
 
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
     html, body {
@@ -57,131 +52,23 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       overscroll-behavior: none;
       touch-action: pan-x pan-y;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    /* Desktop View Container: Android Phone Mockup Frame */
-    @media (min-width: 601px) {
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: linear-gradient(135deg, #1e1e24 0%, #2b2b36 100%);
-      }
-
-      #app-wrapper {
-        position: relative;
-        width: 420px;
-        height: 860px;
-        max-height: 94vh;
-        border-radius: 40px;
-        overflow: hidden;
-        background: #ffffff;
-        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 0 10px #2f3136;
-        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        display: flex;
-        flex-direction: column;
-      }
-
-      /* Fullscreen mode toggle for desktop */
-      #app-wrapper.fullscreen-mode {
-        width: 100vw !important;
-        height: 100vh !important;
-        max-height: 100vh !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-      }
-
-      /* Android Status Bar Simulation on Desktop */
-      #android-status-bar {
-        height: 28px;
-        background-color: var(--primary-color);
-        color: #ffffff;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 16px;
-        font-size: 12px;
-        font-weight: 600;
-        z-index: 1000;
-        flex-shrink: 0;
-      }
-
-      #desktop-controls {
-        position: fixed;
-        top: 16px;
-        right: 16px;
-        z-index: 10000;
-        display: flex;
-        gap: 8px;
-      }
-
-      .desktop-btn {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(8px);
-        color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        padding: 8px 14px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .desktop-btn:hover {
-        background: rgba(255, 255, 255, 0.25);
-        transform: translateY(-1px);
-      }
-    }
-
-    /* Mobile View Container: Native Android Style WebView */
-    @media (max-width: 600px) {
-      body {
-        background-color: #ffffff;
-      }
-
-      #app-wrapper {
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        display: flex;
-        flex-direction: column;
-      }
-
-      #android-status-bar {
-        display: none;
-      }
-
-      #desktop-controls {
-        display: none;
-      }
-    }
-
-    /* Flutter App Viewport */
-    #flutter-container {
-      width: 100%;
-      height: 100%;
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Splash / Loading Screen */
+    /* Fixed Splash / Loading Screen */
     #splash-screen {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
+      width: 100vw;
+      height: 100vh;
       background: #ffffff;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 9999;
+      z-index: 99999;
       transition: opacity 0.4s ease-out;
     }
 
@@ -234,7 +121,7 @@
       display: none;
       align-items: center;
       gap: 12px;
-      z-index: 99999;
+      z-index: 999999;
       border: 1px solid rgba(0, 0, 0, 0.08);
       animation: slideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -283,7 +170,7 @@
       cursor: pointer;
       flex-shrink: 0;
       box-shadow: 0 4px 12px rgba(103, 58, 183, 0.35);
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.15s;
     }
 
     .pwa-install-btn:active {
@@ -304,7 +191,7 @@
       flex-shrink: 0;
     }
 
-    /* iOS Safari Instruction Modal */
+    /* iOS Safari Install Instructions Sheet */
     #ios-modal {
       display: none;
       position: fixed;
@@ -314,7 +201,7 @@
       bottom: 0;
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
-      z-index: 100000;
+      z-index: 1000000;
       justify-content: center;
       align-items: flex-end;
       padding: 16px;
@@ -358,35 +245,12 @@
 </head>
 <body>
 
-  <!-- Desktop Controls -->
-  <div id="desktop-controls">
-    <button class="desktop-btn" id="toggle-frame-btn" onclick="toggleDesktopMode()">
-      <span>⛶</span> Full Screen
-    </button>
-  </div>
-
-  <!-- Android App Style WebView Shell -->
-  <div id="app-wrapper">
-    <!-- Simulated Android Status Bar for Desktop View -->
-    <div id="android-status-bar">
-      <span id="status-clock">12:00</span>
-      <div style="display: flex; gap: 6px; align-items: center;">
-        <span>LTE</span>
-        <span>📶</span>
-        <span>🔋 100%</span>
-      </div>
-    </div>
-
-    <!-- Flutter Container -->
-    <div id="flutter-container">
-      <!-- Splash / Loading Screen -->
-      <div id="splash-screen">
-        <img src="favicon.png" alt="CPAL Icon" class="splash-logo">
-        <div class="splash-title">Color Palette</div>
-        <div class="splash-subtitle">AI-Powered Asian Paints Color System</div>
-        <div class="splash-spinner"></div>
-      </div>
-    </div>
+  <!-- Splash / Loading Screen -->
+  <div id="splash-screen">
+    <img src="favicon.png" alt="CPAL Icon" class="splash-logo">
+    <div class="splash-title">Color Palette</div>
+    <div class="splash-subtitle">AI-Powered Asian Paints Color System</div>
+    <div class="splash-spinner"></div>
   </div>
 
   <!-- Instagram-Style "Add to Home Screen" Shortcut Banner -->
@@ -422,14 +286,13 @@
     </div>
   </div>
 
-  <!-- Service Worker, Caching & PWA Scripts -->
   <script>
     // Register Offline Service Worker for High-Speed Browser Caching
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { scope: './' })
           .then((registration) => {
-            console.log('[CPAL] Offline Service Worker registered with scope:', registration.scope);
+            console.log('[CPAL] Offline Service Worker registered:', registration.scope);
           })
           .catch((error) => {
             console.warn('[CPAL] Service Worker registration failed:', error);
@@ -437,31 +300,38 @@
       });
     }
 
-    // Update Status Bar Clock on Desktop
-    function updateClock() {
-      const clockEl = document.getElementById('status-clock');
-      if (clockEl) {
-        const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    // Reliable Splash Screen Dismissal Mechanism
+    function dismissSplash() {
+      const splash = document.getElementById('splash-screen');
+      if (splash && splash.style.opacity !== '0') {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 400);
       }
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
-    // Toggle Desktop View (Phone Mockup vs Fullscreen)
-    let isFullscreenMode = false;
-    function toggleDesktopMode() {
-      const wrapper = document.getElementById('app-wrapper');
-      const btn = document.getElementById('toggle-frame-btn');
-      isFullscreenMode = !isFullscreenMode;
-      if (isFullscreenMode) {
-        wrapper.classList.add('fullscreen-mode');
-        btn.innerHTML = '<span>📱</span> Mobile Frame';
-      } else {
-        wrapper.classList.remove('fullscreen-mode');
-        btn.innerHTML = '<span>⛶</span> Full Screen';
+    // Dismiss when Flutter renders first frame
+    window.addEventListener('flutter-first-frame', dismissSplash);
+
+    // Watch for Flutter view injected into document.body
+    const domObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.tagName && (
+            node.tagName.toLowerCase() === 'flt-glass-pane' ||
+            node.tagName.toLowerCase() === 'flutter-view' ||
+            node.tagName.toLowerCase() === 'flt-scene-host'
+          )) {
+            setTimeout(dismissSplash, 200);
+            domObserver.disconnect();
+            return;
+          }
+        }
       }
-    }
+    });
+    domObserver.observe(document.body, { childList: true, subtree: true });
+
+    // Absolute fallback: never keep user stuck on splash screen for more than 4 seconds
+    setTimeout(dismissSplash, 4000);
 
     // PWA Install Prompt (Instagram Style)
     let deferredPrompt = null;
@@ -505,7 +375,6 @@
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
-            console.log('[CPAL] User accepted install prompt');
             dismissPwaBanner();
           }
           deferredPrompt = null;
@@ -528,28 +397,9 @@
         document.getElementById('ios-modal').style.display = 'none';
       }
     }
-
-    // Initialize Flutter Engine inside flutter-container
-    window.addEventListener('load', function() {
-      const splash = document.getElementById('splash-screen');
-      const container = document.getElementById('flutter-container');
-
-      if (window._flutter && window._flutter.loader) {
-        _flutter.loader.load({
-          onEntrypointLoaded: async function(engineInitializer) {
-            const appRunner = await engineInitializer.initializeEngine({
-              hostElement: container
-            });
-            await appRunner.runApp();
-            // Smoothly remove splash screen
-            if (splash) {
-              splash.style.opacity = '0';
-              setTimeout(() => splash.remove(), 400);
-            }
-          }
-        });
-      }
-    });
   </script>
+
+  <!-- Modern Flutter Bootstrap Script -->
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
