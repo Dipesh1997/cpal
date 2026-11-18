@@ -5,7 +5,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="CPAL - AI-Powered Asian Paints Color Palette, Color Picker, and Wall Drawing Tool.">
+  <meta name="description" content="Color Pallete - AI-Powered Asian Paints Color Palette, Color Picker, and Wall Drawing Tool.">
 
   <!-- Viewport for Android WebView / Mobile App -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -13,12 +13,12 @@
   <!-- Android & Web App Meta Tags -->
   <meta name="theme-color" content="#673AB7">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="CPAL">
+  <meta name="application-name" content="Color Pallete">
 
   <!-- iOS Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CPAL">
+  <meta name="apple-mobile-web-app-title" content="Color Pallete">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon & Manifest -->
@@ -28,7 +28,7 @@
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-6710120263757804" crossorigin="anonymous"></script>
 
-  <title>CPAL - Color Palette</title>
+  <title>Color Pallete</title>
 
   <style>
     :root {
@@ -247,17 +247,17 @@
 
   <!-- Splash / Loading Screen -->
   <div id="splash-screen">
-    <img src="favicon.png" alt="CPAL Icon" class="splash-logo">
-    <div class="splash-title">Color Palette</div>
+    <img src="favicon.png" alt="Color Pallete Icon" class="splash-logo">
+    <div class="splash-title">Color Pallete</div>
     <div class="splash-subtitle">AI-Powered Asian Paints Color System</div>
     <div class="splash-spinner"></div>
   </div>
 
   <!-- Instagram-Style "Add to Home Screen" Shortcut Banner -->
   <div id="pwa-install-banner">
-    <img src="favicon.png" alt="CPAL Logo" class="pwa-icon">
+    <img src="favicon.png" alt="Color Pallete Logo" class="pwa-icon">
     <div class="pwa-info">
-      <div class="pwa-title">CPAL - Color Palette</div>
+      <div class="pwa-title">Color Pallete</div>
       <div class="pwa-subtitle">Add to Home screen for full-screen offline app</div>
     </div>
     <button class="pwa-install-btn" id="pwa-install-action" onclick="triggerPwaInstall()">Install</button>
@@ -267,8 +267,8 @@
   <!-- iOS Safari Install Instructions Sheet -->
   <div id="ios-modal" onclick="closeIosModal(event)">
     <div class="ios-modal-card">
-      <img src="favicon.png" alt="CPAL Logo" style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 12px;">
-      <h3 style="margin: 0 0 6px 0; font-size: 18px; color: #1a1a1a;">Install CPAL on iPhone</h3>
+      <img src="favicon.png" alt="Color Pallete Logo" style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 12px;">
+      <h3 style="margin: 0 0 6px 0; font-size: 18px; color: #1a1a1a;">Install Color Pallete on iPhone</h3>
       <p style="font-size: 13px; color: #666; margin: 0 0 16px 0;">Add to your Home Screen for the full-screen app experience:</p>
       <div class="ios-step">
         <div class="ios-step-num">1</div>
@@ -292,10 +292,10 @@
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { scope: './' })
           .then((registration) => {
-            console.log('[CPAL] Offline Service Worker registered:', registration.scope);
+            console.log('[Color Pallete] Offline Service Worker registered:', registration.scope);
           })
           .catch((error) => {
-            console.warn('[CPAL] Service Worker registration failed:', error);
+            console.warn('[Color Pallete] Service Worker registration failed:', error);
           });
       });
     }
@@ -353,7 +353,7 @@
     });
 
     window.addEventListener('appinstalled', () => {
-      console.log('[CPAL] App installed to Home Screen');
+      console.log('[Color Pallete] App installed to Home Screen');
       const banner = document.getElementById('pwa-install-banner');
       if (banner) banner.style.display = 'none';
       deferredPrompt = null;

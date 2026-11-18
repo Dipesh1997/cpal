@@ -1,12 +1,12 @@
 {
-    "name": "CPAL - Asian Paints Color Palette",
-    "short_name": "CPAL",
+    "name": "Color Pallete",
+    "short_name": "Color Pallete",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#673AB7",
-    "description": "AI-Powered Asian Paints Color Palette, Color Picker, and Wall Drawing Tool.",
+    "description": "Color Pallete - Asian Paints Color Palette, Color Picker, and Wall Drawing Tool.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

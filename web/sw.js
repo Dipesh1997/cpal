@@ -1,7 +1,7 @@
-// CPAL Offline Service Worker
+// Color Pallete Offline Service Worker
 // Cache-first strategy with background revalidation for maximum loading speed
 
-const CACHE_NAME = 'cpal-cache-v1.0.50';
+const CACHE_NAME = 'color-pallete-cache-v2';
 
 // Essential assets to cache immediately upon service worker installation
 const CORE_ASSETS = [
@@ -29,11 +29,11 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      console.log('[CPAL SW] Pre-caching static assets for offline use...');
+      console.log('[Color Pallete SW] Pre-caching static assets for offline use...');
       await Promise.allSettled(
         CORE_ASSETS.map((url) =>
           cache.add(new Request(url, { cache: 'reload' })).catch((err) => {
-            console.warn('[CPAL SW] Could not precache:', url, err);
+            console.warn('[Color Pallete SW] Could not precache:', url, err);
           })
         )
       );
@@ -48,7 +48,7 @@ self.addEventListener('activate', (event) => {
       Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('[CPAL SW] Deleting older cache:', key);
+            console.log('[Color Pallete SW] Deleting older cache:', key);
             return caches.delete(key);
           }
         })
